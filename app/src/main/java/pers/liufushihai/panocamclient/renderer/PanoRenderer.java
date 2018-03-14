@@ -7,6 +7,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.view.MotionEvent;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -20,6 +21,7 @@ import pers.liufushihai.panocamclient.util.TextResourceReader;
 
 import static android.opengl.GLES20.GL_LINEAR;
 import static android.opengl.GLES20.GL_REPEAT;
+import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.GL_TEXTURE_MAG_FILTER;
 import static android.opengl.GLES20.GL_TEXTURE_MIN_FILTER;
@@ -29,10 +31,12 @@ import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glAttachShader;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glClearColor;
+import static android.opengl.GLES20.glCompileShader;
 import static android.opengl.GLES20.glGenTextures;
 import static android.opengl.GLES20.glGetAttribLocation;
 import static android.opengl.GLES20.glGetUniformLocation;
 import static android.opengl.GLES20.glLinkProgram;
+import static android.opengl.GLES20.glShaderSource;
 import static android.opengl.GLES20.glTexParameteri;
 
 /**
@@ -43,14 +47,17 @@ import static android.opengl.GLES20.glTexParameteri;
  */
 
 public class PanoRenderer implements GLSurfaceView.Renderer{
+    private static final String TAG = "PanoRenderer";
+
     FloatBuffer verticalsBuffer;
 
-    //球体表面的切分的小矩形的绘制两个三角形，6个顶点
-    int CAP = 6;                        //绘制球体时，每次增加的角度
-    /*球体上切分的小片矩形的顶点数据的存放数组，每个顶点有3个向量x,y,z*/
+    /* 球体表面的切分的小矩形的绘制两个三角形，6个顶点 */
+
+    int CAP = 9;                        //绘制球体时，每次增加的角度
+    /* 球体上切分的小片矩形的顶点数据的存放数组，每个顶点有3个向量x,y,z */
     float[] verticals = new float[(180 / CAP) * (360 / CAP) * 6 * 3];
 
-    private FloatBuffer mUvTexVertexBuffer;
+    private final FloatBuffer mUvTexVertexBuffer;
 
     private final float[] UV_TEX_VERTEX = new float[(180 / CAP) * (360 / CAP) * 6 * 2];
 
@@ -97,7 +104,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         float y = 0;
         float z = 0;
 
-        float r = 3;//球体半径
+        float r = MAX_SCALE_VALUE;//球体半径
         int index = 0;
         int index1 = 0;
         double d = CAP * Math.PI / 180;//每次递增的弧度
@@ -148,7 +155,6 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 UV_TEX_VERTEX[index1++] = j * 1f / 360;
                 UV_TEX_VERTEX[index1++] = i * 1f / 180;
 
-
             }
         }
         verticalsBuffer = ByteBuffer.allocateDirect(verticals.length * 4)
@@ -168,7 +174,6 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     @Override
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
 
-
     }
 
     @Override
@@ -187,13 +192,13 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         /* 创建一个着色器对象 */
         int vertexShaderId = GLES20.glCreateShader(GLES20.GL_VERTEX_SHADER);
         /* 上传着色器源代码到着色器对象上 */
-        GLES20.glShaderSource(vertexShaderId,vertexShaderSource);
+        glShaderSource(vertexShaderId,vertexShaderSource);
         /* 编译着色器对象 */
-        GLES20.glCompileShader(vertexShaderId);
+        glCompileShader(vertexShaderId);
 
         int fragmentShaderId = GLES20.glCreateShader(GLES20.GL_FRAGMENT_SHADER);
-        GLES20.glShaderSource(fragmentShaderId,fragmentShaderSource);
-        GLES20.glCompileShader(fragmentShaderId);
+        glShaderSource(fragmentShaderId,fragmentShaderSource);
+        glCompileShader(fragmentShaderId);
 
         /* 将顶点着色器与片段着色器附着到程序对象上 */
         glAttachShader(mProgramId,vertexShaderId);
@@ -216,7 +221,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(),
                 R.drawable.local_test3);
 
-        glActiveTexture(GLES20.GL_TEXTURE0);
+        glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D,mTexNames[0]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
@@ -228,7 +233,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         float ratio = (float) height / width;
 
-        Matrix.frustumM(mProjectionMatrix, 0, -1, 1, -ratio, ratio,0.8f,7);
+        Matrix.frustumM(mProjectionMatrix, 0, -1, 1, -ratio, ratio,3,7);
     }
 
     /**
@@ -237,7 +242,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
      */
     @Override
     public void onDrawFrame(GL10 gl) {
-        glClearColor(0f,0f,0f,1f);
+        //glClearColor(0f,0f,0f,1f);
 
         //调整摄像机焦点位置，使画面滚动
         Matrix.setLookAtM(mCameraMatrix, 0, mAngleX, mAngleY, mAngleZ, 0, 0, 0, 0, 1, 0);
@@ -255,21 +260,39 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     }
 
     /**
-     * 处理手指按压函数
-     * @param normalizedX
-     * @param normalizedY
+     * MotionEvent总处理函数
      */
-    public void handlePress(float normalizedX, float normalizedY){
+    public void handleMotionEvent(final MotionEvent event, int windowHeight){
+        if(event.getAction() == MotionEvent.ACTION_DOWN){
+            startRawX = event.getRawX();
+            startRawY = event.getRawY();
+        }else if(event.getAction() == MotionEvent.ACTION_MOVE){
+            float distanceX = startRawX - event.getRawX();
+            float distanceY = startRawY - event.getRawY();
 
+            //这里的0.1f是为了不让摄像机移动的过快
+            distanceY = 0.1f * (distanceY) / windowHeight;
+
+            yFlingAngleTemp = distanceY * 180 / (Math.PI * 3);
+
+            if(yFlingAngleTemp + yFlingAngle > Math.PI / 2){
+                yFlingAngleTemp = Math.PI / 2 - yFlingAngle;
+            }
+            if(yFlingAngleTemp + yFlingAngle < -Math.PI / 2){
+                yFlingAngleTemp = -Math.PI / 2 - yFlingAngle;
+            }
+
+            distanceX = 0.1f * (-distanceX) / windowHeight;
+            xFlingAngleTemp = distanceX * 180 / (Math.PI * 3);
+
+            mAngleX = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
+                    * Math.sin(xFlingAngle + xFlingAngleTemp));
+            mAngleY = (float) (3 * Math.sin(yFlingAngle + yFlingAngleTemp));
+            mAngleZ = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
+                    * Math.cos(xFlingAngle + xFlingAngleTemp));
+        }else if(event.getAction() == MotionEvent.ACTION_UP){
+            xFlingAngle += xFlingAngleTemp;
+            yFlingAngle += yFlingAngleTemp;
+        }
     }
-
-    /**
-     * 处理手指拖拽函数
-     * @param normalizedX
-     * @param normalizedY
-     */
-    public void handleDrag(float normalizedX, float normalizedY){
-
-    }
-
 }

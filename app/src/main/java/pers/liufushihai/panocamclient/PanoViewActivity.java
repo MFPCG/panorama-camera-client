@@ -32,30 +32,15 @@ public class PanoViewActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onTouchEvent(MotionEvent event) {
-        switch (event.getAction()){
-            case MotionEvent.ACTION_DOWN:
-                glSurfaceView.queueEvent(new Runnable() {
-                    @Override
-                    public void run() {
-
-                    }
-                });
-                break;
-
-            case MotionEvent.ACTION_UP:
-                glSurfaceView.queueEvent(new Runnable() {
-                    @Override
-                    public void run() {
-
-                    }
-                });
-                break;
-
-            default:
-                break;
-        }
-
-        return super.onTouchEvent(event);
+    public boolean onTouchEvent(final MotionEvent event) {
+        glSurfaceView.queueEvent(new Runnable() {
+            @Override
+            public void run() {
+                panoRenderer.handleMotionEvent(event,
+                        getWindowManager().getDefaultDisplay().getHeight());
+            }
+        });
+        glSurfaceView.requestRender();
+        return true;
     }
 }
