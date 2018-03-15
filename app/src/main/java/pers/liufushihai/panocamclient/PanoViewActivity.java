@@ -12,7 +12,7 @@ import pers.liufushihai.panocamclient.renderer.PanoRenderer;
 public class PanoViewActivity extends AppCompatActivity {
     private static final String TAG = "PanoViewActivity";
 
-    GLSurfaceView glSurfaceView;
+    public static GLSurfaceView glSurfaceView;
     PanoRenderer panoRenderer;
 
     @Override
@@ -40,6 +40,7 @@ public class PanoViewActivity extends AppCompatActivity {
                         getWindowManager().getDefaultDisplay().getHeight());
             }
         });
+        Log.d(TAG, "onTouchEvent: " + event.getPointerCount());
         glSurfaceView.requestRender();
         return true;
     }

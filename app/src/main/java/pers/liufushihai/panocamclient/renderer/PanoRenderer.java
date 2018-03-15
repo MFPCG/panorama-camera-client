@@ -7,6 +7,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.util.Log;
 import android.view.MotionEvent;
 
 import java.nio.ByteBuffer;
@@ -16,7 +17,9 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
+import pers.liufushihai.panocamclient.PanoViewActivity;
 import pers.liufushihai.panocamclient.R;
+import pers.liufushihai.panocamclient.util.LoggerConfig;
 import pers.liufushihai.panocamclient.util.TextResourceReader;
 
 import static android.opengl.GLES20.GL_LINEAR;
@@ -49,15 +52,15 @@ import static android.opengl.GLES20.glTexParameteri;
 public class PanoRenderer implements GLSurfaceView.Renderer{
     private static final String TAG = "PanoRenderer";
 
-    FloatBuffer verticalsBuffer;
+    private FloatBuffer verticalsBuffer;
 
     /* 球体表面的切分的小矩形的绘制两个三角形，6个顶点 */
 
-    int CAP = 9;                        //绘制球体时，每次增加的角度
+    private int CAP = 1;                        //绘制球体时，每次增加的角度
     /* 球体上切分的小片矩形的顶点数据的存放数组，每个顶点有3个向量x,y,z */
-    float[] verticals = new float[(180 / CAP) * (360 / CAP) * 6 * 3];
+    private float[] verticals = new float[(180 / CAP) * (360 / CAP) * 6 * 3];
 
-    private final FloatBuffer mUvTexVertexBuffer;
+    private FloatBuffer mUvTexVertexBuffer;
 
     private final float[] UV_TEX_VERTEX = new float[(180 / CAP) * (360 / CAP) * 6 * 2];
 
@@ -66,7 +69,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private int mTexCoordHandle;
     private int mMatrixHandle;
     private int mTexSamplerHandle;
-    int[] mTexNames;
+    private int[] mTexNames;
 
     private final float[] mProjectionMatrix = new float[16];
     private final float[] mCameraMatrix = new float[16];
@@ -79,96 +82,42 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private final Context context;
 
     /* 缩放上下限 */
-    public float MAX_SCALE_VALUE = 3.0f;
-    public float MIN_SCALE_VALUE = 0.8f;
+    private static final float MAX_SCALE_VALUE = 3.0f;
+    private static final float MIN_SCALE_VALUE = 0.8f;
 
     /* 摄像机位置 */
-    public float mAngleX = 0;// 摄像机所在的x坐标
-    public float mAngleY = 0;// 摄像机所在的y坐标
-    public float mAngleZ = 3;// 摄像机所在的z坐标
+    private float mAngleX = 0;// 摄像机所在的x坐标
+    private float mAngleY = 0;// 摄像机所在的y坐标
+    private float mAngleZ = 3;// 摄像机所在的z坐标
 
     /* 手势相关变量 */
-    float startRawX;
-    float startRawY;
+    private float startRawX;
+    private float startRawY;
 
-    double xFlingAngle;
-    double xFlingAngleTemp;
+    private double xFlingAngle;
+    private double xFlingAngleTemp;
 
-    double yFlingAngle;
-    double yFlingAngleTemp;
+    private double yFlingAngle;
+    private double yFlingAngleTemp;
 
+    private int fingerCount = 0;
+    private float oldDistance = 0f;
+    private float newDistance = 0f;
+
+    /* 缩放操作间距值，用于判断操作是缩小或者放大 */
+    private static final float SCALE_DISTANCE_VALUE = 250f;
+
+    /* 球体半径 */
+    private float sphereRadius = MAX_SCALE_VALUE;
+
+    /**
+     * 1.确定绘制的球体的半径(大小)
+     * 2.本地环境内存的分配
+     * @param context
+     */
     public PanoRenderer(Context context) {
         this.context = context;
-
-        float x = 0;
-        float y = 0;
-        float z = 0;
-
-        float r = MAX_SCALE_VALUE;//球体半径
-        int index = 0;
-        int index1 = 0;
-        double d = CAP * Math.PI / 180;//每次递增的弧度
-        for (int i = 0; i < 180; i += CAP) {
-            double d1 = i * Math.PI / 180;
-            for (int j = 0; j < 360; j += CAP) {
-                //获得球体上切分的超小片矩形的顶点坐标（两个三角形组成，所以有六点顶点）
-                double d2 = j * Math.PI / 180;
-                verticals[index++] = (float) (x + r * Math.sin(d1 + d) * Math.cos(d2 + d));
-                verticals[index++] = (float) (y + r * Math.cos(d1 + d));
-                verticals[index++] = (float) (z + r * Math.sin(d1 + d) * Math.sin(d2 + d));
-                //获得球体上切分的超小片三角形的纹理坐标
-                UV_TEX_VERTEX[index1++] = (j + CAP) * 1f / 360;
-                UV_TEX_VERTEX[index1++] = (i + CAP) * 1f / 180;
-
-                verticals[index++] = (float) (x + r * Math.sin(d1) * Math.cos(d2));
-                verticals[index++] = (float) (y + r * Math.cos(d1));
-                verticals[index++] = (float) (z + r * Math.sin(d1) * Math.sin(d2));
-
-                UV_TEX_VERTEX[index1++] = j * 1f / 360;
-                UV_TEX_VERTEX[index1++] = i * 1f / 180;
-
-                verticals[index++] = (float) (x + r * Math.sin(d1) * Math.cos(d2 + d));
-                verticals[index++] = (float) (y + r * Math.cos(d1));
-                verticals[index++] = (float) (z + r * Math.sin(d1) * Math.sin(d2 + d));
-
-                UV_TEX_VERTEX[index1++] = (j + CAP) * 1f / 360;
-                UV_TEX_VERTEX[index1++] = i * 1f / 180;
-
-                verticals[index++] = (float) (x + r * Math.sin(d1 + d) * Math.cos(d2 + d));
-                verticals[index++] = (float) (y + r * Math.cos(d1 + d));
-                verticals[index++] = (float) (z + r * Math.sin(d1 + d) * Math.sin(d2 + d));
-
-                UV_TEX_VERTEX[index1++] = (j + CAP) * 1f / 360;
-                UV_TEX_VERTEX[index1++] = (i + CAP) * 1f / 180;
-
-                verticals[index++] = (float) (x + r * Math.sin(d1 + d) * Math.cos(d2));
-                verticals[index++] = (float) (y + r * Math.cos(d1 + d));
-                verticals[index++] = (float) (z + r * Math.sin(d1 + d) * Math.sin(d2));
-
-                UV_TEX_VERTEX[index1++] = j * 1f / 360;
-                UV_TEX_VERTEX[index1++] = (i + CAP) * 1f / 180;
-
-                verticals[index++] = (float) (x + r * Math.sin(d1) * Math.cos(d2));
-                verticals[index++] = (float) (y + r * Math.cos(d1));
-                verticals[index++] = (float) (z + r * Math.sin(d1) * Math.sin(d2));
-
-                UV_TEX_VERTEX[index1++] = j * 1f / 360;
-                UV_TEX_VERTEX[index1++] = i * 1f / 180;
-
-            }
-        }
-        verticalsBuffer = ByteBuffer.allocateDirect(verticals.length * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer()
-                .put(verticals);
-        verticalsBuffer.position(0);
-
-
-        mUvTexVertexBuffer = ByteBuffer.allocateDirect(UV_TEX_VERTEX.length * 4)
-                .order(ByteOrder.nativeOrder())
-                .asFloatBuffer()
-                .put(UV_TEX_VERTEX);
-        mUvTexVertexBuffer.position(0);
+        programDataInit();
     }
 
     @Override
@@ -233,7 +182,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         float ratio = (float) height / width;
 
-        Matrix.frustumM(mProjectionMatrix, 0, -1, 1, -ratio, ratio,3,7);
+        Matrix.frustumM(mProjectionMatrix, 0, -1, 1, -ratio, ratio,0.8f,7);
     }
 
     /**
@@ -242,7 +191,9 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
      */
     @Override
     public void onDrawFrame(GL10 gl) {
-        //glClearColor(0f,0f,0f,1f);
+        glClearColor(0f,0f,0f,1f);
+
+        programDataInit();
 
         //调整摄像机焦点位置，使画面滚动
         Matrix.setLookAtM(mCameraMatrix, 0, mAngleX, mAngleY, mAngleZ, 0, 0, 0, 0, 1, 0);
@@ -263,36 +214,185 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
      * MotionEvent总处理函数
      */
     public void handleMotionEvent(final MotionEvent event, int windowHeight){
-        if(event.getAction() == MotionEvent.ACTION_DOWN){
-            startRawX = event.getRawX();
-            startRawY = event.getRawY();
-        }else if(event.getAction() == MotionEvent.ACTION_MOVE){
-            float distanceX = startRawX - event.getRawX();
-            float distanceY = startRawY - event.getRawY();
+        switch (event.getAction() & MotionEvent.ACTION_MASK){       //第一次有手指触摸在屏幕上
+            case MotionEvent.ACTION_DOWN:
+                startRawX = event.getRawX();
+                startRawY = event.getRawY();
+                fingerCount = 1;
+                break;
+            case MotionEvent.ACTION_POINTER_UP:                   //抬起时仍然有手指在屏幕上
+                --fingerCount;
+                break;
+            case MotionEvent.ACTION_POINTER_DOWN:                //按下时已有手指在屏幕上
+                ++fingerCount;
+                oldDistance = distance(event);
+                break;
+            case MotionEvent.ACTION_MOVE:                       //手指滑动屏幕
+                float distanceX = startRawX - event.getRawX();
+                float distanceY = startRawY - event.getRawY();
 
-            //这里的0.1f是为了不让摄像机移动的过快
-            distanceY = 0.1f * (distanceY) / windowHeight;
+                //这里的0.1f是为了不让摄像机移动的过快
+                distanceY = 0.1f * (distanceY) / windowHeight;
 
-            yFlingAngleTemp = distanceY * 180 / (Math.PI * 3);
+                yFlingAngleTemp = distanceY * 180 / (Math.PI * 3);
 
-            if(yFlingAngleTemp + yFlingAngle > Math.PI / 2){
-                yFlingAngleTemp = Math.PI / 2 - yFlingAngle;
-            }
-            if(yFlingAngleTemp + yFlingAngle < -Math.PI / 2){
-                yFlingAngleTemp = -Math.PI / 2 - yFlingAngle;
-            }
+                if(yFlingAngleTemp + yFlingAngle > Math.PI / 2){
+                    yFlingAngleTemp = Math.PI / 2 - yFlingAngle;
+                }
+                if(yFlingAngleTemp + yFlingAngle < -Math.PI / 2){
+                    yFlingAngleTemp = -Math.PI / 2 - yFlingAngle;
+                }
 
-            distanceX = 0.1f * (-distanceX) / windowHeight;
-            xFlingAngleTemp = distanceX * 180 / (Math.PI * 3);
+                distanceX = 0.1f * (-distanceX) / windowHeight;
+                xFlingAngleTemp = distanceX * 180 / (Math.PI * 3);
 
-            mAngleX = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
-                    * Math.sin(xFlingAngle + xFlingAngleTemp));
-            mAngleY = (float) (3 * Math.sin(yFlingAngle + yFlingAngleTemp));
-            mAngleZ = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
-                    * Math.cos(xFlingAngle + xFlingAngleTemp));
-        }else if(event.getAction() == MotionEvent.ACTION_UP){
-            xFlingAngle += xFlingAngleTemp;
-            yFlingAngle += yFlingAngleTemp;
+                mAngleX = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
+                        * Math.sin(xFlingAngle + xFlingAngleTemp));
+                mAngleY = (float) (3 * Math.sin(yFlingAngle + yFlingAngleTemp));
+                mAngleZ = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
+                        * Math.cos(xFlingAngle + xFlingAngleTemp));
+
+                if(fingerCount >= 2){
+                    newDistance = distance(event);
+                    if((newDistance > (oldDistance + SCALE_DISTANCE_VALUE))                  //放大
+                            || (newDistance < (oldDistance - SCALE_DISTANCE_VALUE))){       //缩小
+                        sphereRadius *= getScaleRatio(newDistance,oldDistance);
+                        oldDistance = newDistance;              //将当前距离值改为上一个距离值
+
+                        //  programDataInit();             //重新清空数据
+                        PanoViewActivity.glSurfaceView.requestRender();  //请求重新渲染，会调用onDrawframe()
+                    }
+                }
+                break;
+            case MotionEvent.ACTION_UP:                 //最后一个手指离开屏幕
+                xFlingAngle += xFlingAngleTemp;
+                yFlingAngle += yFlingAngleTemp;
+                fingerCount = 0;
+                break;
         }
+
+        if(LoggerConfig.ON){
+            Log.d(TAG, "handleMotionEvent: "
+                    + "指点按压数量：" + fingerCount + '\t'
+                    + "oldDistance: " + oldDistance + '\t'
+                    + "newDistance: " + newDistance + '\n');
+        }
+    }
+
+    /**
+     * 计算缩放比例因子
+     * @return
+     */
+    private float getScaleRatio(float newDistance, float oldDistance){
+        if(LoggerConfig.ON){
+            Log.d(TAG, "getScaleRatio: " + (newDistance / oldDistance));
+        }
+        return (newDistance / oldDistance);
+    }
+
+    /**
+     * 计算两个指尖的距离
+     * 用于后续缩放比的计算
+     * @param event
+     * @return
+     */
+    private float distance(MotionEvent event){
+        float x = event.getX(0) - event.getX(1);
+        float y = event.getY(0) - event.getY(1);
+
+        if(LoggerConfig.ON){
+            Log.d(TAG, "distance: " + (float)Math.sqrt(x * x + y * y));
+        }
+
+        return (float) Math.sqrt(x * x + y * y);
+    }
+
+    /**
+     * OpenGL ES 程序的全局数据初始化
+     */
+    private void programDataInit(){
+
+        /* 先对数组清空 */
+//        if(verticalsBuffer.hasArray())
+//        {
+//            verticalsBuffer.clear();
+//            mUvTexVertexBuffer.clear();
+//        }
+
+        float x = 0;
+        float y = 0;
+        float z = 0;
+
+        float r = sphereRadius;//球体半径
+
+        if(sphereRadius >= MAX_SCALE_VALUE){
+            r = MAX_SCALE_VALUE;
+        }else if(sphereRadius <= MIN_SCALE_VALUE){
+            r = MIN_SCALE_VALUE;
+        }
+
+        int index = 0;
+        int index1 = 0;
+        double d = CAP * Math.PI / 180;//每次递增的弧度
+        for (int i = 0; i < 180; i += CAP) {
+            double d1 = i * Math.PI / 180;
+            for (int j = 0; j < 360; j += CAP) {
+                //获得球体上切分的超小片矩形的顶点坐标（两个三角形组成，所以有六点顶点）
+                double d2 = j * Math.PI / 180;
+                verticals[index++] = (float) (x + r * Math.sin(d1 + d) * Math.cos(d2 + d));
+                verticals[index++] = (float) (y + r * Math.cos(d1 + d));
+                verticals[index++] = (float) (z + r * Math.sin(d1 + d) * Math.sin(d2 + d));
+                //获得球体上切分的超小片三角形的纹理坐标
+                UV_TEX_VERTEX[index1++] = (j + CAP) * 1f / 360;
+                UV_TEX_VERTEX[index1++] = (i + CAP) * 1f / 180;
+
+                verticals[index++] = (float) (x + r * Math.sin(d1) * Math.cos(d2));
+                verticals[index++] = (float) (y + r * Math.cos(d1));
+                verticals[index++] = (float) (z + r * Math.sin(d1) * Math.sin(d2));
+
+                UV_TEX_VERTEX[index1++] = j * 1f / 360;
+                UV_TEX_VERTEX[index1++] = i * 1f / 180;
+
+                verticals[index++] = (float) (x + r * Math.sin(d1) * Math.cos(d2 + d));
+                verticals[index++] = (float) (y + r * Math.cos(d1));
+                verticals[index++] = (float) (z + r * Math.sin(d1) * Math.sin(d2 + d));
+
+                UV_TEX_VERTEX[index1++] = (j + CAP) * 1f / 360;
+                UV_TEX_VERTEX[index1++] = i * 1f / 180;
+
+                verticals[index++] = (float) (x + r * Math.sin(d1 + d) * Math.cos(d2 + d));
+                verticals[index++] = (float) (y + r * Math.cos(d1 + d));
+                verticals[index++] = (float) (z + r * Math.sin(d1 + d) * Math.sin(d2 + d));
+
+                UV_TEX_VERTEX[index1++] = (j + CAP) * 1f / 360;
+                UV_TEX_VERTEX[index1++] = (i + CAP) * 1f / 180;
+
+                verticals[index++] = (float) (x + r * Math.sin(d1 + d) * Math.cos(d2));
+                verticals[index++] = (float) (y + r * Math.cos(d1 + d));
+                verticals[index++] = (float) (z + r * Math.sin(d1 + d) * Math.sin(d2));
+
+                UV_TEX_VERTEX[index1++] = j * 1f / 360;
+                UV_TEX_VERTEX[index1++] = (i + CAP) * 1f / 180;
+
+                verticals[index++] = (float) (x + r * Math.sin(d1) * Math.cos(d2));
+                verticals[index++] = (float) (y + r * Math.cos(d1));
+                verticals[index++] = (float) (z + r * Math.sin(d1) * Math.sin(d2));
+
+                UV_TEX_VERTEX[index1++] = j * 1f / 360;
+                UV_TEX_VERTEX[index1++] = i * 1f / 180;
+
+            }
+        }
+        verticalsBuffer = ByteBuffer.allocateDirect(verticals.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+                .put(verticals);
+        verticalsBuffer.position(0);
+
+        mUvTexVertexBuffer = ByteBuffer.allocateDirect(UV_TEX_VERTEX.length * 4)
+                .order(ByteOrder.nativeOrder())
+                .asFloatBuffer()
+                .put(UV_TEX_VERTEX);
+        mUvTexVertexBuffer.position(0);
     }
 }
