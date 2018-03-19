@@ -32,8 +32,7 @@ public class TextResourceReader {
             String nextLine;
 
             while ((nextLine = bufferedReader.readLine()) != null){
-                body.append(nextLine);
-                body.append('\n');
+                body.append(nextLine).append('\n');
             }
         }catch (IOException e){
             throw new RuntimeException(

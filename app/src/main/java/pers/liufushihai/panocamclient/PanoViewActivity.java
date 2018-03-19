@@ -8,6 +8,7 @@ import android.view.MotionEvent;
 import android.view.ViewGroup;
 
 import pers.liufushihai.panocamclient.renderer.PanoRenderer;
+import pers.liufushihai.panocamclient.util.LoggerConfig;
 
 public class PanoViewActivity extends AppCompatActivity {
     private static final String TAG = "PanoViewActivity";
@@ -20,7 +21,7 @@ public class PanoViewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: ");
 
-        panoRenderer = new PanoRenderer(this);
+        panoRenderer = new PanoRenderer(this,getWindowManager());
         glSurfaceView = new GLSurfaceView(this);    //创建SurfaceView实例
         glSurfaceView.setLayoutParams(new ViewGroup.LayoutParams(-1, -1));  //设置glSurfaceView的布局
         setContentView(glSurfaceView);
@@ -37,10 +38,17 @@ public class PanoViewActivity extends AppCompatActivity {
             @Override
             public void run() {
                 panoRenderer.handleMotionEvent(event,
-                        getWindowManager().getDefaultDisplay().getHeight());
+                        getWindowManager().getDefaultDisplay().getHeight());    //通过计算单指滑动距离来计算摄像头偏移角度
+
+                panoRenderer.handleTouchEvent(event);       //使用矩阵转换处理单指滑动
             }
         });
-        Log.d(TAG, "onTouchEvent: " + event.getPointerCount());
+        if(LoggerConfig.ON){
+            //Log.d(TAG, "onTouchEvent: " + event.getPointerCount());
+            Log.d(TAG, "onTouchEvent: "
+                    + "phone height : " + getWindowManager().getDefaultDisplay().getHeight() + '\t'
+                    + "phone width : " + getWindowManager().getDefaultDisplay().getWidth());
+        }
         glSurfaceView.requestRender();
         return true;
     }

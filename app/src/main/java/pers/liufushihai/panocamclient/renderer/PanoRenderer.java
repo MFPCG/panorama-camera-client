@@ -1,14 +1,19 @@
 package pers.liufushihai.panocamclient.renderer;
 
 import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.view.GestureDetector;
 import android.view.MotionEvent;
+import android.view.ScaleGestureDetector;
+import android.view.WindowManager;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -71,9 +76,9 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private int mTexSamplerHandle;
     private int[] mTexNames;
 
-    private final float[] mProjectionMatrix = new float[16];
-    private final float[] mCameraMatrix = new float[16];
-    private final float[] mMVPMatrix = new float[16];
+    private final float[] mProjectionMatrix = new float[16];    //投影矩阵
+    private final float[] mCameraMatrix = new float[16];        //视图矩阵
+    private final float[] mMVPMatrix = new float[16];           //
 
     private int mWidth;
     private int mHeight;
@@ -83,7 +88,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
     /* 缩放上下限 */
     private static final float MAX_SCALE_VALUE = 3.0f;
-    private static final float MIN_SCALE_VALUE = 0.8f;
+    private static final float MIN_SCALE_VALUE = 1.0f;
 
     /* 摄像机位置 */
     private float mAngleX = 0;// 摄像机所在的x坐标
@@ -105,19 +110,102 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private float newDistance = 0f;
 
     /* 缩放操作间距值，用于判断操作是缩小或者放大 */
-    private static final float SCALE_DISTANCE_VALUE = 250f;
+    private static final float SCALE_DISTANCE_VALUE = 10f;
 
     /* 球体半径 */
     private float sphereRadius = MAX_SCALE_VALUE;
+
+    /* 使用系统内置的手势识别器，用于处理单指滑动以及双指缩放操作 */
+
+    /* 单指滑动相关 */
+    private GestureDetector mGestureDetector;
+    private static final float sDensity = Resources.getSystem().getDisplayMetrics().density;
+    private static final float sDamping = 0.2f;
+    private float mDeltaX;
+    private float mDeltaY;
+
+    /* 双指缩放相关 */
+    private ScaleGestureDetector mScaleGestureDetector;
+    private float mScale;
+
+    private WindowManager mWindowManager;
+
+    private void initGestureHandler(){
+        mDeltaX = mDeltaY = 0;
+        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener(){
+            @Override
+            public boolean onSingleTapConfirmed(MotionEvent e) {
+                return super.onSingleTapConfirmed(e);
+            }
+
+            @Override
+            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
+                mDeltaX += distanceX / sDensity * sDamping;
+                mDeltaY += distanceY / sDensity * sDamping;
+                return super.onScroll(e1, e2, distanceX, distanceY);
+            }
+
+        });
+
+        mScaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.OnScaleGestureListener() {
+            @Override
+            public boolean onScale(ScaleGestureDetector detector) {
+                float scaleFactor = detector.getScaleFactor();
+                updateScale(scaleFactor);
+                return true;
+            }
+
+            @Override
+            public boolean onScaleBegin(ScaleGestureDetector detector) {
+                return true;
+            }
+
+            @Override
+            public void onScaleEnd(ScaleGestureDetector detector) {
+
+            }
+        });
+
+    }
+
+    public void updateScale(float scaleFactor){
+        if(LoggerConfig.ON){
+            Log.d(TAG, "updateScale『raw』: " + scaleFactor);
+        }
+
+        mScale = mScale + (1.0f - scaleFactor);
+        mScale = Math.max(0.122f, Math.min(1.0f,mScale));
+
+        if(LoggerConfig.ON){
+            Log.d(TAG, "updateScale『after』: " + mScale);
+        }
+    }
+
+    /**
+     * 处理手势总方法
+     * @param event
+     * @return
+     */
+    public boolean handleTouchEvent(MotionEvent event){
+        /* 先处理缩放再处理滑动，因为滑动可以理解为缩放的一个特殊情况 */
+        boolean ret = mScaleGestureDetector.onTouchEvent(event);
+        if(!mScaleGestureDetector.isInProgress()){
+            ret = mGestureDetector.onTouchEvent(event);
+        }
+        return ret;
+    }
 
     /**
      * 1.确定绘制的球体的半径(大小)
      * 2.本地环境内存的分配
      * @param context
      */
-    public PanoRenderer(Context context) {
+    public PanoRenderer(Context context, WindowManager windowManager) {
         this.context = context;
+        this.mWindowManager = windowManager;
+
         programDataInit();
+        initGestureHandler();
     }
 
     @Override
@@ -182,7 +270,11 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         float ratio = (float) height / width;
 
-        Matrix.frustumM(mProjectionMatrix, 0, -1, 1, -ratio, ratio,0.8f,7);
+        Matrix.frustumM(mProjectionMatrix,
+                0,
+                -1, 1,
+                -ratio, ratio,
+                0.78f,7);
     }
 
     /**
@@ -195,9 +287,21 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         programDataInit();
 
-        //调整摄像机焦点位置，使画面滚动
+        /* 根据单指滑动的距离旋转矩阵 */
+        Matrix.setIdentityM(mCameraMatrix,0);
+        Matrix.rotateM(mCameraMatrix,0,mDeltaY,1.0f,0.0f,0.0f);
+        Matrix.rotateM(mCameraMatrix,0,mDeltaX,0.0f,1.0f,0.0f);
+
+        /* 根据缩放比例调整投影矩阵『无效』,这种只能是局部的 */
+//        float currentDegree = (float) (Math.toDegrees(Math.atan(mScale))*2);
+//        Matrix.perspectiveM(mProjectionMatrix,0,currentDegree,
+//                (float) mWindowManager.getDefaultDisplay().getWidth()/mWindowManager.getDefaultDisplay().getHeight()/2,
+//                1f,500f);
+
+        /* 调整摄像机焦点位置，使画面滚动 */
         Matrix.setLookAtM(mCameraMatrix, 0, mAngleX, mAngleY, mAngleZ, 0, 0, 0, 0, 1, 0);
         Matrix.multiplyMM(mMVPMatrix, 0, mProjectionMatrix, 0, mCameraMatrix, 0);
+
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         GLES20.glUseProgram(mProgramId);
         GLES20.glEnableVertexAttribArray(mPositionHandle);
@@ -214,22 +318,36 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
      * MotionEvent总处理函数
      */
     public void handleMotionEvent(final MotionEvent event, int windowHeight){
-        switch (event.getAction() & MotionEvent.ACTION_MASK){       //第一次有手指触摸在屏幕上
+        switch (event.getAction() & MotionEvent.ACTION_MASK){     //第一次有手指触摸在屏幕上
             case MotionEvent.ACTION_DOWN:
                 startRawX = event.getRawX();
                 startRawY = event.getRawY();
                 fingerCount = 1;
                 break;
-            case MotionEvent.ACTION_POINTER_UP:                   //抬起时仍然有手指在屏幕上
+            case MotionEvent.ACTION_POINTER_UP:                    //抬起时仍然有手指在屏幕上
                 --fingerCount;
                 break;
-            case MotionEvent.ACTION_POINTER_DOWN:                //按下时已有手指在屏幕上
+            case MotionEvent.ACTION_POINTER_DOWN:                  //按下时已有手指在屏幕上
                 ++fingerCount;
                 oldDistance = distance(event);
                 break;
-            case MotionEvent.ACTION_MOVE:                       //手指滑动屏幕
+            case MotionEvent.ACTION_MOVE:                          //手指滑动屏幕
+
                 float distanceX = startRawX - event.getRawX();
                 float distanceY = startRawY - event.getRawY();
+
+                if(LoggerConfig.ON){
+//                    Log.d(TAG, "handleMotionEvent: "
+//                            + "distanceX : " + distanceX
+//                            + " distance Y : " + distanceY
+//                            + " windowHeight : " + windowHeight);
+
+                    Log.d(TAG, "handleMotionEvent: "
+                            + "rawX: " + event.getRawX() + '\t'
+                            + "rawY: " + event.getRawY() + "\t\t"
+                            + "X: " + event.getX() + '\t'
+                            + "Y: " + event.getY());
+                }
 
                 //这里的0.1f是为了不让摄像机移动的过快
                 distanceY = 0.1f * (distanceY) / windowHeight;
@@ -272,10 +390,10 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         }
 
         if(LoggerConfig.ON){
-            Log.d(TAG, "handleMotionEvent: "
-                    + "指点按压数量：" + fingerCount + '\t'
-                    + "oldDistance: " + oldDistance + '\t'
-                    + "newDistance: " + newDistance + '\n');
+//            Log.d(TAG, "handleMotionEvent: "
+//                    + "指点按压数量：" + fingerCount + '\t'
+//                    + "oldDistance: " + oldDistance + '\t'
+//                    + "newDistance: " + newDistance + '\n');
         }
     }
 
@@ -297,14 +415,20 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
      * @return
      */
     private float distance(MotionEvent event){
-        float x = event.getX(0) - event.getX(1);
-        float y = event.getY(0) - event.getY(1);
+        float x = 0f;
+        float y = 0f;
+        try {
+            x = event.getX(0) - event.getX(1);
+            y = event.getY(0) - event.getY(1);
 
-        if(LoggerConfig.ON){
-            Log.d(TAG, "distance: " + (float)Math.sqrt(x * x + y * y));
+            if(LoggerConfig.ON){
+                Log.d(TAG, "distance: " + (float)Math.sqrt(x * x + y * y));
+            }
+        }catch (IllegalArgumentException e){
+            e.printStackTrace();
+        }finally {
+            return (float) Math.sqrt(x * x + y * y);
         }
-
-        return (float) Math.sqrt(x * x + y * y);
     }
 
     /**
@@ -395,4 +519,6 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 .put(UV_TEX_VERTEX);
         mUvTexVertexBuffer.position(0);
     }
+
+
 }
