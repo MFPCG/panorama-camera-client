@@ -1,4 +1,4 @@
-package pers.liufushihai.panocamclient;
+package pers.liufushihai.panocamclient.activity;
 
 import android.opengl.GLSurfaceView;
 import android.support.v7.app.AppCompatActivity;

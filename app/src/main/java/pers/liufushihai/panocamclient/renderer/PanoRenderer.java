@@ -8,7 +8,6 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
-import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -22,7 +21,7 @@ import java.nio.FloatBuffer;
 import javax.microedition.khronos.egl.EGLConfig;
 import javax.microedition.khronos.opengles.GL10;
 
-import pers.liufushihai.panocamclient.PanoViewActivity;
+import pers.liufushihai.panocamclient.activity.PanoViewActivity;
 import pers.liufushihai.panocamclient.R;
 import pers.liufushihai.panocamclient.util.LoggerConfig;
 import pers.liufushihai.panocamclient.util.TextResourceReader;
@@ -88,12 +87,12 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
     /* 缩放上下限 */
     private static final float MAX_SCALE_VALUE = 3.0f;
-    private static final float MIN_SCALE_VALUE = 1.0f;
+    private static final float MIN_SCALE_VALUE = 1.5f;
 
     /* 摄像机位置 */
     private float mAngleX = 0;// 摄像机所在的x坐标
     private float mAngleY = 0;// 摄像机所在的y坐标
-    private float mAngleZ = 3;// 摄像机所在的z坐标
+    private float mAngleZ = 1.5f;// 摄像机所在的z坐标
 
     /* 手势相关变量 */
     private float startRawX;
@@ -129,6 +128,8 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private float mScale;
 
     private WindowManager mWindowManager;
+
+    private float ratio;
 
     private void initGestureHandler(){
         mDeltaX = mDeltaY = 0;
@@ -268,13 +269,23 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         GLUtils.texImage2D(GL_TEXTURE_2D,0,bitmap,0);
         bitmap.recycle();
 
-        float ratio = (float) height / width;
+        /* 设置透视投影 */
+        float ratio = (float) height / width; //调整屏幕宽高比
+
+        this.ratio = ratio;
 
         Matrix.frustumM(mProjectionMatrix,
                 0,
                 -1, 1,
                 -ratio, ratio,
                 0.78f,7);
+
+        if(LoggerConfig.ON){
+            Log.d(TAG, "onSurfaceChanged: "
+                    + "height : " + height + '\t'
+                    + "width : " + width + '\t'
+                    + "ratio : " + ratio);
+        }
     }
 
     /**
@@ -291,6 +302,12 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         Matrix.setIdentityM(mCameraMatrix,0);
         Matrix.rotateM(mCameraMatrix,0,mDeltaY,1.0f,0.0f,0.0f);
         Matrix.rotateM(mCameraMatrix,0,mDeltaX,0.0f,1.0f,0.0f);
+
+        Matrix.frustumM(mProjectionMatrix,
+                0,
+                -1, 1,
+                -ratio, ratio,
+                0.78f,7);
 
         /* 根据缩放比例调整投影矩阵『无效』,这种只能是局部的 */
 //        float currentDegree = (float) (Math.toDegrees(Math.atan(mScale))*2);
@@ -372,10 +389,22 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
                 if(fingerCount >= 2){
                     newDistance = distance(event);
-                    if((newDistance > (oldDistance + SCALE_DISTANCE_VALUE))                  //放大
-                            || (newDistance < (oldDistance - SCALE_DISTANCE_VALUE))){       //缩小
-                        sphereRadius *= getScaleRatio(newDistance,oldDistance);
+                    if ((newDistance > (oldDistance + SCALE_DISTANCE_VALUE))                  //放大
+                            || (newDistance < (oldDistance - SCALE_DISTANCE_VALUE))) {       //缩小
+                        sphereRadius *= getScaleRatio(newDistance, oldDistance);
                         oldDistance = newDistance;              //将当前距离值改为上一个距离值
+
+                        /* 根据比例调整透视投影等参数值 */
+                        {
+                            Matrix.frustumM(mProjectionMatrix,
+                                    0,
+                                    -1 * getScaleRatio(newDistance, oldDistance),
+                                    1 * getScaleRatio(newDistance, oldDistance),
+                                    -ratio * getScaleRatio(newDistance, oldDistance),
+                                    ratio * getScaleRatio(newDistance, oldDistance),
+                                    0.78f * getScaleRatio(newDistance, oldDistance),
+                                    7 * getScaleRatio(newDistance,oldDistance));
+                        }
 
                         //  programDataInit();             //重新清空数据
                         PanoViewActivity.glSurfaceView.requestRender();  //请求重新渲染，会调用onDrawframe()
@@ -519,6 +548,4 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 .put(UV_TEX_VERTEX);
         mUvTexVertexBuffer.position(0);
     }
-
-
 }
