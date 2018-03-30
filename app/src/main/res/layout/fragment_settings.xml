@@ -5,9 +5,142 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content">
 
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="48dp">
+
+        <TextView
+            android:layout_weight="9"
+            android:gravity="center_vertical"
+            android:textSize="16sp"
+            android:text="本地IP"
+            android:paddingLeft="16dp"
+            android:layout_width="0dp"
+            android:layout_height="48dp" />
+
+        <TextView
+            android:layout_weight="6"
+            android:gravity="center_vertical|center"
+            android:textSize="16sp"
+            android:text="192.168.100.250"
+            android:layout_width="0dp"
+            android:layout_height="48dp" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="16dp"
+        android:background="#e6e6e6" />
+
+    <!--737373-->
+    <!--FAFAFA-->
+
+    <LinearLayout
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="48dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="9"
+            android:gravity="center_vertical"
+            android:paddingLeft="16dp"
+            android:text="连接状态"
+            android:textSize="16sp" />
+
+        <TextView
+            android:layout_weight="6"
+            android:gravity="center_vertical|center"
+            android:textSize="16sp"
+            android:text="已连接"
+            android:layout_width="0dp"
+            android:layout_height="48dp" />
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="16dp"
+        android:background="#e6e6e6" />
+
+    <LinearLayout
+        android:id="@+id/ll_connection_setting"
+        android:orientation="horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="48dp">
+
+        <TextView
+            android:layout_weight="9"
+            android:textColor="#3993CB"
+            android:gravity="center_vertical"
+            android:textSize="16sp"
+            android:text="连接设置"
+            android:paddingLeft="16dp"
+            android:layout_width="0dp"
+            android:layout_height="48dp" />
+
+        <TextView
+            android:layout_weight="9"
+            android:textColor="#3993CB"
+            android:gravity="center"
+            android:textSize="16sp"
+            android:text="192.168.100.250 : 8888"
+            android:paddingLeft="16dp"
+            android:layout_width="0dp"
+            android:layout_height="48dp" />
+
+        <!--<ImageView-->
+        <!--android:layout_weight="3.6"-->
+        <!--android:src="@drawable/ic_shortcut_keyboard_arrow_right"-->
+        <!--android:layout_width="0dp"-->
+        <!--android:layout_height="match_parent" />-->
+
+    </LinearLayout>
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="16dp"
+        android:background="#e6e6e6" />
+
+
     <TextView
-        android:text="SettingFragment"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:gravity="center_vertical"
+        android:textSize="16sp"
+        android:text="如何使用"
+        android:paddingLeft="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="48dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="16dp"
+        android:background="#e6e6e6" />
+
+    <TextView
+        android:gravity="center_vertical"
+        android:textSize="16sp"
+        android:text="关于"
+        android:paddingLeft="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="48dp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_alignParentBottom="true"
+        android:layout_marginLeft="16dp"
+        android:background="#e6e6e6" />
+
 
 </LinearLayout>

@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.DefaultItemAnimator;
@@ -11,6 +12,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -19,6 +21,7 @@ import java.util.List;
 import pers.liufushihai.panocamclient.R;
 import pers.liufushihai.panocamclient.adapter.ImageAdapter;
 import pers.liufushihai.panocamclient.bean.ImageBean;
+import pers.liufushihai.panocamclient.network.TcpClientConnector;
 import pers.liufushihai.panocamclient.util.FileHandleHelper;
 
 /**
@@ -34,7 +37,8 @@ public class DevPicFragment extends BaseFragment {
     private RecyclerView.Adapter mAdapter;
     private RecyclerView.LayoutManager mLayoutManager;
 
-    private List<ImageBean> imageBeanList = new ArrayList<>();
+    public static List<ImageBean> imageBeanList = new ArrayList<>();
+    public static TcpClientConnector mTcpClientConnector;
 
     @Override
     protected void loadData() {
@@ -46,6 +50,9 @@ public class DevPicFragment extends BaseFragment {
         File dir = new File(String.valueOf(Environment.getExternalStorageDirectory() + "/PanoramaImages"));
         FileHandleHelper.resursionFile(dir,imageBeanList);
         printImageListUri(imageBeanList);
+
+        mTcpClientConnector = TcpClientConnector.getInstance();
+        initTcpClient();
     }
 
     @Override
@@ -83,10 +90,10 @@ public class DevPicFragment extends BaseFragment {
             case 1:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     FileHandleHelper.initFileSaveHelper();
-                    Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.local_test4);
-                    //FileHandleHelper.saveBitmapWithString(bitmap, "厚B-706");
-                    FileHandleHelper.saveBitmapWithTime(bitmap);
-                    bitmap.recycle();
+//                    Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.local_test4);
+//                    //FileHandleHelper.saveBitmapWithString(bitmap, "厚B-706");
+//                    FileHandleHelper.saveBitmapWithTime(bitmap);
+//                    bitmap.recycle();
 
                     Log.d(TAG, "onRequestPermissionsResult: ");
                 }
@@ -106,6 +113,25 @@ public class DevPicFragment extends BaseFragment {
             Log.d(TAG, "printImageListUri: " + imgbean.getUri());
             count++;
         }
+    }
+
+    private void initTcpClient(){
+        mTcpClientConnector = TcpClientConnector.getInstance();
+        mTcpClientConnector.setOnConnectListener(new TcpClientConnector.ConnectListener() {
+            @Override
+            public void onReceiveData(String data) {
+                if(data.toString() == "RECV_DONE"){
+//                    mImageView.setImageURI(Uri.parse(Environment.getExternalStorageDirectory()
+//                            + "/PanoramaImages/recvImage.jpg"));
+                    Toast.makeText(mContext, "接收图片完成！",
+                            Toast.LENGTH_SHORT).show();
+//                    mImageView.setImageURI(Uri.parse(TcpClientConnector.currentFileName));
+                    imageBeanList.add(new ImageBean(String.valueOf(
+                            Uri.parse(TcpClientConnector.currentFileName))));
+                    mAdapter.notifyDataSetChanged();
+                }
+            }
+        });
     }
 
 }

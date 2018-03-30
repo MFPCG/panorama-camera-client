@@ -11,6 +11,7 @@ import android.os.Bundle;
 import pers.liufushihai.panocamclient.R;
 import pers.liufushihai.panocamclient.fragment.BaseFragment;
 import pers.liufushihai.panocamclient.fragment.FragmentFactory;
+import pers.liufushihai.panocamclient.network.TcpClientConnector;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -18,6 +19,7 @@ public class MainActivity extends AppCompatActivity {
     private TabLayout mTab;
     private ViewPager mViewPager;
     ShortPagerAdapter adapter;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
