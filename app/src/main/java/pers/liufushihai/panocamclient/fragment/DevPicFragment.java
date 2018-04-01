@@ -1,12 +1,14 @@
 package pers.liufushihai.panocamclient.fragment;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
 import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -14,11 +16,16 @@ import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
 
+import com.afollestad.materialdialogs.MaterialDialog;
+
 import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
 import pers.liufushihai.panocamclient.R;
+import pers.liufushihai.panocamclient.activity.MainActivity;
+import pers.liufushihai.panocamclient.activity.PanoViewActivity;
 import pers.liufushihai.panocamclient.adapter.ImageAdapter;
 import pers.liufushihai.panocamclient.bean.ImageBean;
 import pers.liufushihai.panocamclient.network.TcpClientConnector;
@@ -40,19 +47,16 @@ public class DevPicFragment extends BaseFragment {
     public static List<ImageBean> imageBeanList = new ArrayList<>();
     public static TcpClientConnector mTcpClientConnector;
 
+    private MaterialDialog progressDialog;
+
     @Override
     protected void loadData() {
         //加载数据
-//        Toast.makeText(mContext, "DevPicFragment",
-//                Toast.LENGTH_SHORT).show();
-
         requestPermissions();
         File dir = new File(String.valueOf(Environment.getExternalStorageDirectory() + "/PanoramaImages"));
         FileHandleHelper.resursionFile(dir,imageBeanList);
-        printImageListUri(imageBeanList);
-
-        mTcpClientConnector = TcpClientConnector.getInstance();
-        initTcpClient();
+        //printImageListUri(imageBeanList);
+        initTcpClientConnector();
     }
 
     @Override
@@ -67,6 +71,34 @@ public class DevPicFragment extends BaseFragment {
         mAdapter = new ImageAdapter(mContext,imageBeanList);
 
         mRecyclerView.setAdapter(mAdapter);
+
+        view.findViewById(R.id.fab).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(TcpClientConnector.isConnected == false){
+                    Toast.makeText(mContext,"未与相机端连接,请前往设置页设置连接",Toast.LENGTH_SHORT).show();
+                }else{
+                    new Thread(new Runnable() {             //创建一个子线程来发送数据
+                        @Override
+                        public void run() {
+                            try{
+                                mTcpClientConnector.send("Shoot");
+                            }catch(IOException e){
+                                e.printStackTrace();
+                            }
+                        }
+                    }).start();
+
+                    progressDialog = new MaterialDialog.Builder(mContext)
+                            .title("数据传输中")
+                            .content("正在接收数据")
+                            .progress(true, 0)
+                            .cancelable(false)
+                            .show();
+                }
+            }
+        });
+
         return view;
     }
 
@@ -90,11 +122,6 @@ public class DevPicFragment extends BaseFragment {
             case 1:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     FileHandleHelper.initFileSaveHelper();
-//                    Bitmap bitmap = BitmapFactory.decodeResource(getResources(), R.drawable.local_test4);
-//                    //FileHandleHelper.saveBitmapWithString(bitmap, "厚B-706");
-//                    FileHandleHelper.saveBitmapWithTime(bitmap);
-//                    bitmap.recycle();
-
                     Log.d(TAG, "onRequestPermissionsResult: ");
                 }
                 break;
@@ -115,17 +142,21 @@ public class DevPicFragment extends BaseFragment {
         }
     }
 
-    private void initTcpClient(){
+    private void initTcpClientConnector(){
         mTcpClientConnector = TcpClientConnector.getInstance();
         mTcpClientConnector.setOnConnectListener(new TcpClientConnector.ConnectListener() {
             @Override
             public void onReceiveData(String data) {
                 if(data.toString() == "RECV_DONE"){
-//                    mImageView.setImageURI(Uri.parse(Environment.getExternalStorageDirectory()
-//                            + "/PanoramaImages/recvImage.jpg"));
-                    Toast.makeText(mContext, "接收图片完成！",
-                            Toast.LENGTH_SHORT).show();
-//                    mImageView.setImageURI(Uri.parse(TcpClientConnector.currentFileName));
+//                    Toast.makeText(mContext, "接收图片完成！",
+//                            Toast.LENGTH_SHORT).show();
+
+                    Intent intent = new Intent(mContext, PanoViewActivity.class);
+                    intent.putExtra("string_uri",TcpClientConnector.currentFileName);
+                    mContext.startActivity(intent);
+
+                    progressDialog.dismiss();
+
                     imageBeanList.add(new ImageBean(String.valueOf(
                             Uri.parse(TcpClientConnector.currentFileName))));
                     mAdapter.notifyDataSetChanged();

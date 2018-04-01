@@ -1,6 +1,7 @@
 package pers.liufushihai.panocamclient.adapter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -13,6 +14,7 @@ import com.bumptech.glide.Glide;
 import java.util.List;
 
 import pers.liufushihai.panocamclient.R;
+import pers.liufushihai.panocamclient.activity.PanoViewActivity;
 import pers.liufushihai.panocamclient.bean.ImageBean;
 
 /**
@@ -54,8 +56,13 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
             public void onClick(View v) {
                 int pos = holder.getAdapterPosition();
                 ImageBean imageBean = mImgBeanList.get(pos);
-                Toast.makeText(mContext,"Pos: " + pos + "\nUri:"
-                        + imageBean.getUri(),Toast.LENGTH_SHORT).show();
+//                Toast.makeText(mContext,"Pos: " + pos + "\nUri:"
+//                        + imageBean.getUri(),Toast.LENGTH_SHORT).show();
+
+                Intent intent = new Intent(mContext, PanoViewActivity.class);
+                intent.putExtra("string_uri",imageBean.getUri());
+                mContext.startActivity(intent);
+
             }
         });
         return holder;

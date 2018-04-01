@@ -21,7 +21,11 @@ public class PanoViewActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate: ");
 
-        panoRenderer = new PanoRenderer(this,getWindowManager());
+        String getUri = getIntent().getStringExtra("string_uri");
+
+        Log.d(TAG, "onCreate: " + getUri);
+
+        panoRenderer = new PanoRenderer(this,getWindowManager(),getUri);
         glSurfaceView = new GLSurfaceView(this);    //创建SurfaceView实例
         glSurfaceView.setLayoutParams(new ViewGroup.LayoutParams(-1, -1));  //设置glSurfaceView的布局
         setContentView(glSurfaceView);

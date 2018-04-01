@@ -36,6 +36,7 @@ public class TcpClientConnector {
     private final int FLAG_RECEIVE_IMAGE_DONE = 1;
 
     public static String currentFileName = "";
+    public static boolean isConnected = false;
 
     public interface ConnectListener{
         void onReceiveData(String data);
@@ -100,6 +101,7 @@ public class TcpClientConnector {
         //创建socket
         if(mClient == null){
             mClient = new Socket(mServIp, mServPort);
+            isConnected = true;
         }
 
         //根据时间创建一个本地文件接收数据
@@ -155,8 +157,10 @@ public class TcpClientConnector {
      * @throws IOException
      */
     public void send(String data) throws IOException{
-        OutputStream outputStream = mClient.getOutputStream();
-        outputStream.write(data.getBytes());
+        if(mClient != null){
+            OutputStream outputStream = mClient.getOutputStream();
+            outputStream.write(data.getBytes());
+        }
     }
 
     /**

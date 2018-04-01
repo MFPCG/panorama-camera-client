@@ -2,8 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/PanoramaCameraClient.iml" filepath="$PROJECT_DIR$/PanoramaCameraClient.iml" />
+      <module fileurl="file://D:\panorama-camera-client\PanoramaCameraClient.iml" filepath="D:\panorama-camera-client\PanoramaCameraClient.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/panorama-camera-client.iml" filepath="$PROJECT_DIR$/panorama-camera-client.iml" />
     </modules>
   </component>
 </project>

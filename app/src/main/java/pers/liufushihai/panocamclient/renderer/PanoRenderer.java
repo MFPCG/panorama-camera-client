@@ -128,6 +128,8 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private float mScale;
 
     private WindowManager mWindowManager;
+    private String curUri;                      //当前要显示的图片在本地的Uri
+    private Bitmap bitmap;
 
     private float ratio;
 
@@ -201,9 +203,12 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
      * 2.本地环境内存的分配
      * @param context
      */
-    public PanoRenderer(Context context, WindowManager windowManager) {
+    public PanoRenderer(Context context, WindowManager windowManager,String curUri) {
         this.context = context;
         this.mWindowManager = windowManager;
+        this.curUri = curUri;
+
+        bitmap = BitmapFactory.decodeFile(curUri);
 
         programDataInit();
         initGestureHandler();
@@ -256,8 +261,8 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         /* 产生纹理对象 */
         glGenTextures(1,mTexNames,0);
 
-        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(),
-                R.drawable.local_test3);
+//        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(),
+//                R.drawable.local_test3);
 
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D,mTexNames[0]);

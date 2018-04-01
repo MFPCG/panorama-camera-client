@@ -20,6 +20,7 @@
             android:layout_height="48dp" />
 
         <TextView
+            android:id="@+id/tv_local_ip"
             android:layout_weight="6"
             android:gravity="center_vertical|center"
             android:textSize="16sp"
@@ -54,6 +55,7 @@
             android:textSize="16sp" />
 
         <TextView
+            android:id="@+id/tv_connect_status"
             android:layout_weight="6"
             android:gravity="center_vertical|center"
             android:textSize="16sp"
@@ -87,6 +89,7 @@
             android:layout_height="48dp" />
 
         <TextView
+            android:id="@+id/tv_ip_port"
             android:layout_weight="9"
             android:textColor="#3993CB"
             android:gravity="center"
