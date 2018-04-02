@@ -8,4 +8,15 @@
         <item name="colorAccent">#607D8B</item>
     </style>
 
+    <style name="AppTheme.NoActionBar">
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
+    </style>
+
+    <style name="MyCustomStyle" parent="AppTheme">
+        <item name="windowActionBar">true</item>
+        <item name="windowNoTitle">true</item>
+        <item name="android:statusBarColor">#64808E</item>
+    </style>
+
 </resources>
