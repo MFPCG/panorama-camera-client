@@ -9,7 +9,7 @@
     tools:context="pers.liufushihai.panocamclient.activity.MainActivity">
 
     <android.support.design.widget.TabLayout
-        app:tabSelectedTextColor="#86B950"
+        app:tabSelectedTextColor="#607D8B"
         app:tabMode="fixed"
         app:tabIndicatorHeight="2dp"
         app:tabIndicatorColor="@color/colorAccent"

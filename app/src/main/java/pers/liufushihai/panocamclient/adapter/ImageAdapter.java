@@ -20,7 +20,7 @@ import pers.liufushihai.panocamclient.bean.ImageBean;
 /**
  * Date        : 2018/3/27
  * Author      : liufushihai
- * Description : RecyclerView展示适配器类
+ * Description : RecyclerView适配器类
  */
 
 public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
@@ -45,24 +45,19 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
 
     @Override
     public ViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        //return null;
         View view = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.recyclerview_item,parent,false);
 
-        //添加点击事件
         final ViewHolder holder = new ViewHolder(view);
         holder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 int pos = holder.getAdapterPosition();
                 ImageBean imageBean = mImgBeanList.get(pos);
-//                Toast.makeText(mContext,"Pos: " + pos + "\nUri:"
-//                        + imageBean.getUri(),Toast.LENGTH_SHORT).show();
 
                 Intent intent = new Intent(mContext, PanoViewActivity.class);
                 intent.putExtra("string_uri",imageBean.getUri());
                 mContext.startActivity(intent);
-
             }
         });
         return holder;
@@ -71,7 +66,6 @@ public class ImageAdapter extends RecyclerView.Adapter<ImageAdapter.ViewHolder>{
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
         ImageBean imageBean =  mImgBeanList.get(position);
-
         Glide.with(mContext)
                 .load(imageBean.getUri())
                 .into(holder.imageView);

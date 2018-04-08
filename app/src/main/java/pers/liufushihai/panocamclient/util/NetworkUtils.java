@@ -6,12 +6,16 @@ import java.net.SocketException;
 import java.util.Enumeration;
 
 /**
- * Author         :  liufushihai
- * Time             :  2018/3/30 22:59
- * Description  :  网络工具类
+ * <pre>
+ *     author: Blankj
+ *     blog  : http://blankj.com
+ *     time  : 2016/08/02
+ *     desc  : utils about time
+ * </pre>
  */
 
-public class NetworkUtil {
+public class NetworkUtils {
+
 
     public static String getIPAddress(final boolean useIPv4) {
         try {

@@ -20,25 +20,13 @@ import pers.liufushihai.panocamclient.bean.ImageBean;
  * Description : 文件保存工具类
  */
 
-public class FileHandleHelper {
+public class FileUtils {
 
-    private static final String TAG = "FileHandleHelper";
+    private static final String TAG = "FileUtils";
 
     private static String mSaveFolderName;      //存放图像文件的文件夹名
     private static File root;                   //手机内存根目录
     private static File directory;              //根据文件夹名创建的文件夹
-
-    //静态初始化程序，会在其他程序使用该类之前就会执行，适合执行final变量的初始化
-    //会存在的问题就是：用户未授权时就执行，无法创建文件夹
-//    static {
-//        mSaveFolderName = "TestPanoClient";
-//        root = Environment.getExternalStorageDirectory();
-//        directory = new File(root,mSaveFolderName);
-//
-//        if(!directory.exists()){
-//            directory.mkdirs();                       //可创建多级目录，mkdir()只能创建一级目录
-//        }
-//    }
 
     public static void initFileSaveHelper(){
         mSaveFolderName = "PanoramaImages";
@@ -59,6 +47,11 @@ public class FileHandleHelper {
         saveFile(bitmap,file);
     }
 
+    /**
+     * 以指定字符串名为保存文件名
+     * @param bitmap
+     * @param str
+     */
     public static void saveBitmapWithString(Bitmap bitmap, String str){
         File file = new File(directory,str + ".jpg");
         saveFile(bitmap,file);
@@ -99,7 +92,7 @@ public class FileHandleHelper {
      * @param dir
      * @param images
      */
-    public static void resursionFile(File dir, List<ImageBean> images){
+    public static void resursionFileInFolder(File dir, List<ImageBean> images){
         //得到某个文件夹下所有的文件
         File[] files = dir.listFiles();
         //文件为空
@@ -111,7 +104,7 @@ public class FileHandleHelper {
             //如果是文件夹
             if(file.isDirectory()){
                 //则递归
-                resursionFile(file,images);
+                resursionFileInFolder(file,images);
             }else{
                 //如果不是文件夹，则是文件
                 if(file.getName().endsWith(".jpg")){

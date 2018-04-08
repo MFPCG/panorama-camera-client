@@ -3,13 +3,9 @@ package pers.liufushihai.panocamclient.fragment;
 import android.Manifest;
 import android.content.Intent;
 import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
 import android.os.Environment;
 import android.support.annotation.NonNull;
-import android.support.design.widget.Snackbar;
-import android.support.v7.widget.DefaultItemAnimator;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -24,12 +20,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 import pers.liufushihai.panocamclient.R;
-import pers.liufushihai.panocamclient.activity.MainActivity;
 import pers.liufushihai.panocamclient.activity.PanoViewActivity;
 import pers.liufushihai.panocamclient.adapter.ImageAdapter;
 import pers.liufushihai.panocamclient.bean.ImageBean;
 import pers.liufushihai.panocamclient.network.TcpClientConnector;
-import pers.liufushihai.panocamclient.util.FileHandleHelper;
+import pers.liufushihai.panocamclient.util.FileUtils;
 
 /**
  * Date        : 2018/3/27
@@ -46,22 +41,26 @@ public class DevPicFragment extends BaseFragment {
 
     public static List<ImageBean> imageBeanList = new ArrayList<>();
     public static TcpClientConnector mTcpClientConnector;
-
     private MaterialDialog progressDialog;
 
+    /**
+     * 初始化加载数据
+     */
     @Override
     protected void loadData() {
-        //加载数据
         requestPermissions();
         File dir = new File(String.valueOf(Environment.getExternalStorageDirectory() + "/PanoramaImages"));
-        FileHandleHelper.resursionFile(dir,imageBeanList);
+        FileUtils.resursionFileInFolder(dir,imageBeanList);
         //printImageListUri(imageBeanList);
         initTcpClientConnector();
     }
 
+    /**
+     * DevPicFragment布局初始化
+     * @return
+     */
     @Override
     protected View initView() {
-        //Fragment布局初始化
         View view = View.inflate(mContext,R.layout.fragment_dev_pic,null);
         mRecyclerView = view.findViewById(R.id.my_recycler_view);
 
@@ -76,41 +75,43 @@ public class DevPicFragment extends BaseFragment {
             @Override
             public void onClick(View v) {
                 if(TcpClientConnector.isConnected == false){
-                    Toast.makeText(mContext,"未与相机端连接,请前往设置页设置连接",Toast.LENGTH_SHORT).show();
+                    Toast.makeText(mContext, getResources().getText(
+                            R.string.dev_pic_info_please_to_connect),
+                            Toast.LENGTH_SHORT).show();
                 }else{
-                    new Thread(new Runnable() {             //创建一个子线程来发送数据
+                    new Thread(new Runnable() {
                         @Override
                         public void run() {
                             try{
-                                mTcpClientConnector.send("Shoot");
+                                mTcpClientConnector.send(getResources().getString(
+                                        R.string.shoot_command));
                             }catch(IOException e){
                                 e.printStackTrace();
                             }
                         }
                     }).start();
 
-                    progressDialog = new MaterialDialog.Builder(mContext)
-                            .title("数据传输中")
-                            .content("正在接收数据")
-                            .progress(true, 0)
-                            .cancelable(false)
-                            .show();
+                    if(progressDialog == null){
+                        progressDialog = new MaterialDialog.Builder(mContext)
+                                .content(getResources().
+                                        getText(R.string.dev_pic_info_receiving_data))
+                                .progress(true, 0)
+                                .cancelable(false)
+                                .show();
+                    }else{
+                        progressDialog.show();
+                    }
                 }
             }
         });
-
         return view;
     }
 
     /**
      * 请求存储权限
+     * Fragment中进行权限认证，直接调用requestPermissions即可
      */
     private void requestPermissions(){
-        /* 在Fragment中使用Activity中使用ActivityCompat使用6.0权限认证是不行的，而且onRequestPermissionsResult无法回调*/
-//        ActivityCompat.requestPermissions(getActivity(),new String[]{
-//                Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
-
-        /* 直接使用requestPermissions就能回调到当前重写的onRequestPermissionsResult */
         requestPermissions(new String[]{
                 Manifest.permission.WRITE_EXTERNAL_STORAGE},1);
     }
@@ -121,8 +122,10 @@ public class DevPicFragment extends BaseFragment {
         switch (requestCode){
             case 1:
                 if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    FileHandleHelper.initFileSaveHelper();
+                    FileUtils.initFileSaveHelper();
                     Log.d(TAG, "onRequestPermissionsResult: ");
+                }else if(grantResults[0] == PackageManager.PERMISSION_DENIED){
+                    /* 授权取消处理 */
                 }
                 break;
             default:
@@ -131,31 +134,34 @@ public class DevPicFragment extends BaseFragment {
     }
 
     /**
-     * 打印列表当前的object类
+     * 打印列表当前的元素
      * @param imgList
      */
     private void printImageListUri(List<ImageBean> imgList){
         int count = 0;
-        for(ImageBean imgbean : imgList){
-            Log.d(TAG, "printImageListUri: " + imgbean.getUri());
+        for(ImageBean imgBean : imgList){
+            Log.d(TAG, "printImageListUri: " + imgBean.getUri());
             count++;
         }
     }
 
+    /**
+     * 初始化TCP客户端实例
+     */
     private void initTcpClientConnector(){
         mTcpClientConnector = TcpClientConnector.getInstance();
         mTcpClientConnector.setOnConnectListener(new TcpClientConnector.ConnectListener() {
             @Override
             public void onReceiveData(String data) {
                 if(data.toString() == "RECV_DONE"){
-//                    Toast.makeText(mContext, "接收图片完成！",
-//                            Toast.LENGTH_SHORT).show();
+
+                    if(progressDialog != null){
+                        progressDialog.dismiss();
+                    }
 
                     Intent intent = new Intent(mContext, PanoViewActivity.class);
                     intent.putExtra("string_uri",TcpClientConnector.currentFileName);
                     mContext.startActivity(intent);
-
-                    progressDialog.dismiss();
 
                     imageBeanList.add(new ImageBean(String.valueOf(
                             Uri.parse(TcpClientConnector.currentFileName))));
@@ -164,5 +170,4 @@ public class DevPicFragment extends BaseFragment {
             }
         });
     }
-
 }

@@ -21,7 +21,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TabLayout mTab;
     private ViewPager mViewPager;
-    ShortPagerAdapter adapter;
+    private ShortPagerAdapter adapter;
 
 
     @Override

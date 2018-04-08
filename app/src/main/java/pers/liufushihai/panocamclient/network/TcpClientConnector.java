@@ -6,6 +6,7 @@ import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 import android.util.Log;
+import android.widget.Toast;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -14,6 +15,8 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Date;
+
+import pers.liufushihai.panocamclient.util.TimeUtils;
 
 /**
  * Date        : 2018/3/30
@@ -28,8 +31,6 @@ public class TcpClientConnector {
     private Socket mClient;
     private ConnectListener mListener;
     private Thread mConnectThread;
-
-    public static Uri imageUri;
     private FileOutputStream fout;
     private int recvBytes = 0;
     private final int FLAG_OF_STR_DATA = 1000;
@@ -53,7 +54,7 @@ public class TcpClientConnector {
         return mTcpClientConnector;
     }
 
-    public void createConnect(final String mSerIP, final int mSerPort) {            //连接服务器端的线程
+    public void createConnect(final String mSerIP, final int mSerPort) {   //连接服务器端的线程
         if (mConnectThread == null) {
             mConnectThread = new Thread(new Runnable() {
                 @Override
@@ -62,6 +63,7 @@ public class TcpClientConnector {
                         connect(mSerIP, mSerPort);              //执行的下面的connect函数，及创建线程用来接收来自服务器端的图像数据
                     } catch (IOException e) {
                         e.printStackTrace();
+                        Log.d(TAG, "run: isConnected : " + isConnected);
                     }
                 }
             });
@@ -85,7 +87,6 @@ public class TcpClientConnector {
                         mListener.onReceiveData(msg.getData().getString("str_recv"));
                     }
                     break;
-
             }
         }
     };
@@ -101,8 +102,11 @@ public class TcpClientConnector {
         //创建socket
         if(mClient == null){
             mClient = new Socket(mServIp, mServPort);
+            /* 如果socket创建失败的话，就会抛出异常，下面变量值依旧为false,不过要等一段较长的时间就没有办法正常处理吗 */
             isConnected = true;
         }
+
+        Log.d(TAG, "connect: isConnected : " + isConnected);
 
         //根据时间创建一个本地文件接收数据
         File root = Environment.getExternalStorageDirectory();
@@ -111,7 +115,8 @@ public class TcpClientConnector {
             directory.mkdirs();
         }
 
-        File file = new File(directory,new Date().getTime() + ".jpg");
+        //File file = new File(directory,new Date().getTime() + ".jpg");
+        File file = new File(directory, TimeUtils.millis2String(new Date().getTime()) + ".jpg");
         fout = new FileOutputStream(file);
 
         currentFileName = String.valueOf(file.getAbsolutePath());
@@ -164,7 +169,7 @@ public class TcpClientConnector {
     }
 
     /**
-     * 断开连接
+     * 断开连接与相机端的连接
      * @throws IOException
      */
     public void disConnect() throws IOException{
@@ -185,7 +190,7 @@ public class TcpClientConnector {
             res = true;
         }catch (IOException e){
             res = false;
-            e.printStackTrace();
+            //e.printStackTrace();
         }
         return res;
     }

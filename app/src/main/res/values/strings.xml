@@ -1,3 +1,40 @@
 <resources>
-    <string name="app_name">Panorama-Camera-Client</string>
+    <string name="app_name">全景相机移动端</string>
+
+    <!--SplashActivity标题-->
+    <string name="splash_activity_slogan">全景相机移动端</string>
+
+    <!--IP地址及端口号输入提示信息-->
+    <string name="hint_info_dialog_title">请输入相机端IP地址及端口号</string>
+    <string name="hint_info_ip">IP地址</string>
+    <string name="hint_info_port">端口</string>
+    <string name="hint_info_check_ip">请输入正确的IP地址!</string>
+    <string name="hint_info_check_port">请输入正确的端口号!</string>
+
+    <!--图片展示Fragment提示信息-->
+    <string name="dev_pic_info_please_to_connect">未与相机端连接，请前往设置页设置连接</string>
+    <string name="dev_pic_info_receiving_data">接收数据中...</string>
+
+    <!--连接Fragment页面中文提示信息-->
+    <string name="setting_info_local_ip">本地IP</string>
+    <string name="setting_info_default_ip">192.168.100.250</string>
+    <string name="setting_info_conn_status">连接状态</string>
+    <string name="setting_info_default_conn_status">未连接</string>
+    <string name="setting_info_conn_setting">连接设置</string>
+    <string name="setting_info_conn_default_setting">192.168.100.250 : 8888</string>
+    <string name="setting_info_how_to_use">如何使用</string>
+    <string name="setting_info_about">关于</string>
+
+    <!--连接状态-->
+    <string name="conn_status_disconnect">未连接</string>
+    <string name="conn_status_connected">已连接</string>
+
+    <!--按钮状态-->
+    <string name="btn_text_connect">连接</string>
+    <string name="btn_text_cancel">取消</string>
+
+    <!--拍照控制命令-->
+    <string name="shoot_command">Shoot</string>
+
+
 </resources>

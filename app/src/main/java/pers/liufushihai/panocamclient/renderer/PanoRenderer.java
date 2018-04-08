@@ -400,16 +400,16 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                         oldDistance = newDistance;              //将当前距离值改为上一个距离值
 
                         /* 根据比例调整透视投影等参数值 */
-                        {
-                            Matrix.frustumM(mProjectionMatrix,
-                                    0,
-                                    -1 * getScaleRatio(newDistance, oldDistance),
-                                    1 * getScaleRatio(newDistance, oldDistance),
-                                    -ratio * getScaleRatio(newDistance, oldDistance),
-                                    ratio * getScaleRatio(newDistance, oldDistance),
-                                    0.78f * getScaleRatio(newDistance, oldDistance),
-                                    7 * getScaleRatio(newDistance,oldDistance));
-                        }
+//                        {
+//                            Matrix.frustumM(mProjectionMatrix,
+//                                    0,
+//                                    -1 * getScaleRatio(newDistance, oldDistance),
+//                                    1 * getScaleRatio(newDistance, oldDistance),
+//                                    -ratio * getScaleRatio(newDistance, oldDistance),
+//                                    ratio * getScaleRatio(newDistance, oldDistance),
+//                                    0.78f * getScaleRatio(newDistance, oldDistance),
+//                                    7 * getScaleRatio(newDistance,oldDistance));
+//                        }
 
                         //  programDataInit();             //重新清空数据
                         PanoViewActivity.glSurfaceView.requestRender();  //请求重新渲染，会调用onDrawframe()

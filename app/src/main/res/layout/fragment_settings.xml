@@ -14,7 +14,7 @@
             android:layout_weight="9"
             android:gravity="center_vertical"
             android:textSize="16sp"
-            android:text="本地IP"
+            android:text="@string/setting_info_local_ip"
             android:paddingLeft="16dp"
             android:layout_width="0dp"
             android:layout_height="48dp" />
@@ -24,7 +24,7 @@
             android:layout_weight="6"
             android:gravity="center_vertical|center"
             android:textSize="16sp"
-            android:text="192.168.100.250"
+            android:text="@string/setting_info_default_ip"
             android:layout_width="0dp"
             android:layout_height="48dp" />
 
@@ -51,7 +51,7 @@
             android:layout_weight="9"
             android:gravity="center_vertical"
             android:paddingLeft="16dp"
-            android:text="连接状态"
+            android:text="@string/setting_info_conn_status"
             android:textSize="16sp" />
 
         <TextView
@@ -59,7 +59,7 @@
             android:layout_weight="6"
             android:gravity="center_vertical|center"
             android:textSize="16sp"
-            android:text="已连接"
+            android:text="@string/setting_info_default_conn_status"
             android:layout_width="0dp"
             android:layout_height="48dp" />
 
@@ -73,7 +73,7 @@
         android:background="#e6e6e6" />
 
     <LinearLayout
-        android:id="@+id/ll_connection_setting"
+        android:id="@+id/ll_connection_settings_display"
         android:orientation="horizontal"
         android:layout_width="match_parent"
         android:layout_height="48dp">
@@ -83,7 +83,7 @@
             android:textColor="#3993CB"
             android:gravity="center_vertical"
             android:textSize="16sp"
-            android:text="连接设置"
+            android:text="@string/setting_info_conn_setting"
             android:paddingLeft="16dp"
             android:layout_width="0dp"
             android:layout_height="48dp" />
@@ -94,16 +94,10 @@
             android:textColor="#3993CB"
             android:gravity="center"
             android:textSize="16sp"
-            android:text="192.168.100.250 : 8888"
+            android:text="@string/setting_info_conn_default_setting"
             android:paddingLeft="16dp"
             android:layout_width="0dp"
             android:layout_height="48dp" />
-
-        <!--<ImageView-->
-        <!--android:layout_weight="3.6"-->
-        <!--android:src="@drawable/ic_shortcut_keyboard_arrow_right"-->
-        <!--android:layout_width="0dp"-->
-        <!--android:layout_height="match_parent" />-->
 
     </LinearLayout>
 
@@ -114,11 +108,10 @@
         android:layout_marginLeft="16dp"
         android:background="#e6e6e6" />
 
-
     <TextView
         android:gravity="center_vertical"
         android:textSize="16sp"
-        android:text="如何使用"
+        android:text="@string/setting_info_how_to_use"
         android:paddingLeft="16dp"
         android:layout_width="match_parent"
         android:layout_height="48dp" />
@@ -133,7 +126,7 @@
     <TextView
         android:gravity="center_vertical"
         android:textSize="16sp"
-        android:text="关于"
+        android:text="@string/setting_info_about"
         android:paddingLeft="16dp"
         android:layout_width="match_parent"
         android:layout_height="48dp" />
