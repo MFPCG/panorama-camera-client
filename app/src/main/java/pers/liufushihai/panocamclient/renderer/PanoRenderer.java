@@ -60,7 +60,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
     /* 球体表面的切分的小矩形的绘制两个三角形，6个顶点 */
 
-    private int CAP = 1;                        //绘制球体时，每次增加的角度
+    private int CAP = 6;                        //绘制球体时，每次增加的角度
     /* 球体上切分的小片矩形的顶点数据的存放数组，每个顶点有3个向量x,y,z */
     private float[] verticals = new float[(180 / CAP) * (360 / CAP) * 6 * 3];
 
@@ -300,13 +300,17 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     @Override
     public void onDrawFrame(GL10 gl) {
         glClearColor(0f,0f,0f,1f);
+        Log.d(TAG, "onDrawFrame: "
+                + "x : " + mAngleX
+                + " y : " + mAngleY
+                + " z : " + mAngleZ);
 
         programDataInit();
 
         /* 根据单指滑动的距离旋转矩阵 */
-        Matrix.setIdentityM(mCameraMatrix,0);
-        Matrix.rotateM(mCameraMatrix,0,mDeltaY,1.0f,0.0f,0.0f);
-        Matrix.rotateM(mCameraMatrix,0,mDeltaX,0.0f,1.0f,0.0f);
+//        Matrix.setIdentityM(mCameraMatrix,0);
+//        Matrix.rotateM(mCameraMatrix,0,mDeltaY,1.0f,0.0f,0.0f);
+//        Matrix.rotateM(mCameraMatrix,0,mDeltaX,0.0f,1.0f,0.0f);
 
         Matrix.frustumM(mProjectionMatrix,
                 0,
@@ -346,80 +350,66 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 startRawY = event.getRawY();
                 fingerCount = 1;
                 break;
-            case MotionEvent.ACTION_POINTER_UP:                    //抬起时仍然有手指在屏幕上
-                --fingerCount;
-                break;
-            case MotionEvent.ACTION_POINTER_DOWN:                  //按下时已有手指在屏幕上
-                ++fingerCount;
-                oldDistance = distance(event);
-                break;
+
             case MotionEvent.ACTION_MOVE:                          //手指滑动屏幕
-
-                float distanceX = startRawX - event.getRawX();
-                float distanceY = startRawY - event.getRawY();
-
-                if(LoggerConfig.ON){
-//                    Log.d(TAG, "handleMotionEvent: "
-//                            + "distanceX : " + distanceX
-//                            + " distance Y : " + distanceY
-//                            + " windowHeight : " + windowHeight);
-
-                    Log.d(TAG, "handleMotionEvent: "
-                            + "rawX: " + event.getRawX() + '\t'
-                            + "rawY: " + event.getRawY() + "\t\t"
-                            + "X: " + event.getX() + '\t'
-                            + "Y: " + event.getY());
-                }
-
-                //这里的0.1f是为了不让摄像机移动的过快
-                distanceY = 0.1f * (distanceY) / windowHeight;
-
-                yFlingAngleTemp = distanceY * 180 / (Math.PI * 3);
-
-                if(yFlingAngleTemp + yFlingAngle > Math.PI / 2){
-                    yFlingAngleTemp = Math.PI / 2 - yFlingAngle;
-                }
-                if(yFlingAngleTemp + yFlingAngle < -Math.PI / 2){
-                    yFlingAngleTemp = -Math.PI / 2 - yFlingAngle;
-                }
-
-                distanceX = 0.1f * (-distanceX) / windowHeight;
-                xFlingAngleTemp = distanceX * 180 / (Math.PI * 3);
-
-                mAngleX = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
-                        * Math.sin(xFlingAngle + xFlingAngleTemp));
-                mAngleY = (float) (3 * Math.sin(yFlingAngle + yFlingAngleTemp));
-                mAngleZ = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
-                        * Math.cos(xFlingAngle + xFlingAngleTemp));
-
                 if(fingerCount >= 2){
                     newDistance = distance(event);
                     if ((newDistance > (oldDistance + SCALE_DISTANCE_VALUE))                  //放大
                             || (newDistance < (oldDistance - SCALE_DISTANCE_VALUE))) {       //缩小
                         sphereRadius *= getScaleRatio(newDistance, oldDistance);
                         oldDistance = newDistance;              //将当前距离值改为上一个距离值
-
-                        /* 根据比例调整透视投影等参数值 */
-//                        {
-//                            Matrix.frustumM(mProjectionMatrix,
-//                                    0,
-//                                    -1 * getScaleRatio(newDistance, oldDistance),
-//                                    1 * getScaleRatio(newDistance, oldDistance),
-//                                    -ratio * getScaleRatio(newDistance, oldDistance),
-//                                    ratio * getScaleRatio(newDistance, oldDistance),
-//                                    0.78f * getScaleRatio(newDistance, oldDistance),
-//                                    7 * getScaleRatio(newDistance,oldDistance));
-//                        }
-
-                        //  programDataInit();             //重新清空数据
                         PanoViewActivity.glSurfaceView.requestRender();  //请求重新渲染，会调用onDrawframe()
                     }
+                }else{
+                    float distanceX = startRawX - event.getRawX();
+                    float distanceY = startRawY - event.getRawY();
+
+                    if(LoggerConfig.ON){
+                        Log.d(TAG, "handleMotionEvent: "
+                                + "rawX: " + event.getRawX() + '\t'
+                                + "rawY: " + event.getRawY() + "\t\t"
+                                + "X: " + event.getX() + '\t'
+                                + "Y: " + event.getY());
+                    }
+
+                    //这里的0.1f是为了不让摄像机移动的过快
+                    distanceY = 0.1f * (distanceY) / windowHeight;
+
+                    yFlingAngleTemp = distanceY * 180 / (Math.PI * 3);
+
+                    if(yFlingAngleTemp + yFlingAngle > Math.PI / 2){
+                        yFlingAngleTemp = Math.PI / 2 - yFlingAngle;
+                    }
+                    if(yFlingAngleTemp + yFlingAngle < -Math.PI / 2){
+                        yFlingAngleTemp = -Math.PI / 2 - yFlingAngle;
+                    }
+
+                    distanceX = 0.1f * (-distanceX) / windowHeight;
+                    xFlingAngleTemp = distanceX * 180 / (Math.PI * 3);
+
+                    mAngleX = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
+                            * Math.sin(xFlingAngle + xFlingAngleTemp));
+                    mAngleY = (float) (3 * Math.sin(yFlingAngle + yFlingAngleTemp));
+                    mAngleZ = (float) (3 * Math.cos(yFlingAngle + yFlingAngleTemp)
+                            * Math.cos(xFlingAngle + xFlingAngleTemp));
+
+                    PanoViewActivity.glSurfaceView.requestRender();  //请求重新渲染，会调用onDrawframe()
                 }
                 break;
+
             case MotionEvent.ACTION_UP:                 //最后一个手指离开屏幕
                 xFlingAngle += xFlingAngleTemp;
                 yFlingAngle += yFlingAngleTemp;
                 fingerCount = 0;
+                break;
+
+            case MotionEvent.ACTION_POINTER_UP:                    //抬起时仍然有手指在屏幕上
+                --fingerCount;
+                break;
+
+            case MotionEvent.ACTION_POINTER_DOWN:                  //按下时已有手指在屏幕上
+                ++fingerCount;
+                oldDistance = distance(event);
                 break;
         }
 
@@ -454,13 +444,12 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         try {
             x = event.getX(0) - event.getX(1);
             y = event.getY(0) - event.getY(1);
-
-            if(LoggerConfig.ON){
-                Log.d(TAG, "distance: " + (float)Math.sqrt(x * x + y * y));
-            }
         }catch (IllegalArgumentException e){
             e.printStackTrace();
         }finally {
+            if(LoggerConfig.ON){
+                Log.d(TAG, "distance: " + (float)Math.sqrt(x * x + y * y));
+            }
             return (float) Math.sqrt(x * x + y * y);
         }
     }
@@ -469,13 +458,6 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
      * OpenGL ES 程序的全局数据初始化
      */
     private void programDataInit(){
-
-        /* 先对数组清空 */
-//        if(verticalsBuffer.hasArray())
-//        {
-//            verticalsBuffer.clear();
-//            mUvTexVertexBuffer.clear();
-//        }
 
         float x = 0;
         float y = 0;

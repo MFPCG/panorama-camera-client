@@ -43,7 +43,7 @@ public class PanoViewActivity extends AppCompatActivity {
                 panoRenderer.handleMotionEvent(event,
                         getWindowManager().getDefaultDisplay().getHeight());    //通过计算单指滑动距离来计算摄像头偏移角度
 
-                panoRenderer.handleTouchEvent(event);                           //使用矩阵转换处理单指滑动
+          //      panoRenderer.handleTouchEvent(event);                           //使用矩阵转换处理单指滑动
             }
         });
         if(LoggerConfig.ON){

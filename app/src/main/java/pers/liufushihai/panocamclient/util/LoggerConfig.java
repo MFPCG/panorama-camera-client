@@ -7,5 +7,5 @@ package pers.liufushihai.panocamclient.util;
  */
 
 public class LoggerConfig {
-    public static final boolean ON = true;
+    public static  boolean ON = true;
 }
