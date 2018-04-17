@@ -283,7 +283,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 0,
                 -1, 1,
                 -ratio, ratio,
-                0.78f,7);
+                3f,7);
 
         if(LoggerConfig.ON){
             Log.d(TAG, "onSurfaceChanged: "
@@ -303,7 +303,15 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         Log.d(TAG, "onDrawFrame: "
                 + "x : " + mAngleX
                 + " y : " + mAngleY
-                + " z : " + mAngleZ);
+                + " z : " + mAngleZ
+                + " sphereRadius : " + sphereRadius
+                + " ratio : " + ratio);
+
+        if(sphereRadius >= MAX_SCALE_VALUE){
+            sphereRadius = MAX_SCALE_VALUE;
+        }else if(sphereRadius <= MIN_SCALE_VALUE){
+            sphereRadius = MIN_SCALE_VALUE;
+        }
 
         programDataInit();
 
@@ -464,12 +472,6 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         float z = 0;
 
         float r = sphereRadius;//球体半径
-
-        if(sphereRadius >= MAX_SCALE_VALUE){
-            r = MAX_SCALE_VALUE;
-        }else if(sphereRadius <= MIN_SCALE_VALUE){
-            r = MIN_SCALE_VALUE;
-        }
 
         int index = 0;
         int index1 = 0;
