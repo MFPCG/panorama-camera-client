@@ -22,15 +22,15 @@ public class PanoViewActivity extends AppCompatActivity {
 
         String getUri = getIntent().getStringExtra("string_uri");
 
-        Log.d(TAG, "onCreate: " + getUri);
+        if(LoggerConfig.ON){
+            Log.d(TAG, "onCreate: " + getUri);
+        }
 
         panoRenderer = new PanoRenderer(this,getWindowManager(),getUri);
         glSurfaceView = new GLSurfaceView(this);                                  //创建SurfaceView实例
         glSurfaceView.setLayoutParams(new ViewGroup.LayoutParams(-1, -1));  //设置glSurfaceView的布局
         setContentView(glSurfaceView);
-
         glSurfaceView.setEGLContextClientVersion(2);
-
         glSurfaceView.setRenderer(panoRenderer);
         glSurfaceView.setRenderMode(GLSurfaceView.RENDERMODE_WHEN_DIRTY);   //设置渲染模式
     }
@@ -42,8 +42,6 @@ public class PanoViewActivity extends AppCompatActivity {
             public void run() {
                 panoRenderer.handleMotionEvent(event,
                         getWindowManager().getDefaultDisplay().getHeight());    //通过计算单指滑动距离来计算摄像头偏移角度
-
-          //      panoRenderer.handleTouchEvent(event);                           //使用矩阵转换处理单指滑动
             }
         });
         if(LoggerConfig.ON){

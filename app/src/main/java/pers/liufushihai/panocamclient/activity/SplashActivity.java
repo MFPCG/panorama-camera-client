@@ -30,7 +30,6 @@ public class SplashActivity extends AppCompatActivity {
 
             @Override
             public void onAnimationEnd(Animation animation) {
-//                页面的跳转
                 Intent intent = new Intent(
                         SplashActivity.this, MainActivity.class);
                 startActivity(intent);

@@ -16,6 +16,8 @@ import java.io.OutputStream;
 import java.net.Socket;
 import java.util.Date;
 
+import pers.liufushihai.panocamclient.constant.Constants;
+import pers.liufushihai.panocamclient.util.LoggerConfig;
 import pers.liufushihai.panocamclient.util.TimeUtils;
 
 /**
@@ -63,7 +65,9 @@ public class TcpClientConnector {
                         connect(mSerIP, mSerPort);              //执行的下面的connect函数，及创建线程用来接收来自服务器端的图像数据
                     } catch (IOException e) {
                         e.printStackTrace();
-                        Log.d(TAG, "run: isConnected : " + isConnected);
+                        if(LoggerConfig.ON){
+                            Log.d(TAG, "run: isConnected : " + isConnected);
+                        }
                     }
                 }
             });
@@ -106,22 +110,25 @@ public class TcpClientConnector {
             isConnected = true;
         }
 
-        Log.d(TAG, "connect: isConnected : " + isConnected);
+        if(LoggerConfig.ON){
+            Log.d(TAG, "connect: isConnected : " + isConnected);
+        }
 
         //根据时间创建一个本地文件接收数据
         File root = Environment.getExternalStorageDirectory();
-        File directory = new File(root,"PanoramaImages");
+        File directory = new File(root, Constants.SAVING_FOLDER);
         if(!directory.exists()){
             directory.mkdirs();
         }
 
-        //File file = new File(directory,new Date().getTime() + ".jpg");
-        File file = new File(directory, TimeUtils.millis2String(new Date().getTime()) + ".jpg");
+        File file = new File(directory, TimeUtils.millis2String(
+                new Date().getTime()) + Constants.SUFFIX_FILE_TYPE);
         fout = new FileOutputStream(file);
 
         currentFileName = String.valueOf(file.getAbsolutePath());
-        Log.d(TAG, "connect: " + "currentFileName = " + currentFileName);
-
+        if(LoggerConfig.ON){
+            Log.d(TAG, "connect: " + "currentFileName = " + currentFileName);
+        }
 
         //阻塞接收数据
         InputStream inputStream = mClient.getInputStream();
@@ -135,7 +142,9 @@ public class TcpClientConnector {
 
             recvBytes += len;       //计算接收数据字节数
 
-            Log.d(TAG, "connect: " + "len = " + len);
+            if(LoggerConfig.ON){
+                Log.d(TAG, "connect: " + "len = " + len);
+            }
 
             try {
                 fout.write(buffer,0,len);       //往file写入接收的图像数据
@@ -190,7 +199,7 @@ public class TcpClientConnector {
             res = true;
         }catch (IOException e){
             res = false;
-            //e.printStackTrace();
+            e.printStackTrace();
         }
         return res;
     }

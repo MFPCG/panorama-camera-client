@@ -23,6 +23,7 @@ import pers.liufushihai.panocamclient.R;
 import pers.liufushihai.panocamclient.activity.PanoViewActivity;
 import pers.liufushihai.panocamclient.adapter.ImageAdapter;
 import pers.liufushihai.panocamclient.bean.ImageBean;
+import pers.liufushihai.panocamclient.constant.Constants;
 import pers.liufushihai.panocamclient.network.TcpClientConnector;
 import pers.liufushihai.panocamclient.util.FileUtils;
 
@@ -49,9 +50,9 @@ public class DevPicFragment extends BaseFragment {
     @Override
     protected void loadData() {
         requestPermissions();
-        File dir = new File(String.valueOf(Environment.getExternalStorageDirectory() + "/PanoramaImages"));
+        File dir = new File(String.valueOf(Environment.
+                getExternalStorageDirectory() + "/" + Constants.SAVING_FOLDER));
         FileUtils.resursionFileInFolder(dir,imageBeanList);
-        //printImageListUri(imageBeanList);
         initTcpClientConnector();
     }
 
@@ -130,18 +131,6 @@ public class DevPicFragment extends BaseFragment {
                 break;
             default:
                 break;
-        }
-    }
-
-    /**
-     * 打印列表当前的元素
-     * @param imgList
-     */
-    private void printImageListUri(List<ImageBean> imgList){
-        int count = 0;
-        for(ImageBean imgBean : imgList){
-            Log.d(TAG, "printImageListUri: " + imgBean.getUri());
-            count++;
         }
     }
 

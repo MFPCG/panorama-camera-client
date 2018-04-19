@@ -58,9 +58,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
     private FloatBuffer verticalsBuffer;
 
-    /* 球体表面的切分的小矩形的绘制两个三角形，6个顶点 */
-
-    private int CAP = 6;                        //绘制球体时，每次增加的角度
+    private int CAP = 1;                        //绘制球体时，每次增加的角度
     /* 球体上切分的小片矩形的顶点数据的存放数组，每个顶点有3个向量x,y,z */
     private float[] verticals = new float[(180 / CAP) * (360 / CAP) * 6 * 3];
 
@@ -75,9 +73,9 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private int mTexSamplerHandle;
     private int[] mTexNames;
 
-    private final float[] mProjectionMatrix = new float[16];    //投影矩阵
-    private final float[] mCameraMatrix = new float[16];        //视图矩阵
-    private final float[] mMVPMatrix = new float[16];           //
+    private final float[] mProjectionMatrix = new float[16];    //投影变换矩阵
+    private final float[] mCameraMatrix = new float[16];        //视图矩阵,控制观看角度
+    private final float[] mMVPMatrix = new float[16];           //投影变换
 
     private int mWidth;
     private int mHeight;
@@ -85,14 +83,14 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     /* 增设相关加载glsl相关变量 */
     private final Context context;
 
-    /* 缩放上下限 */
+    /* 缩放时对应绘制的球体的上下限 */
     private static final float MAX_SCALE_VALUE = 3.0f;
     private static final float MIN_SCALE_VALUE = 1.5f;
 
     /* 摄像机位置 */
-    private float mAngleX = 0;// 摄像机所在的x坐标
-    private float mAngleY = 0;// 摄像机所在的y坐标
-    private float mAngleZ = 1.5f;// 摄像机所在的z坐标
+    private float mAngleX = 0;     // 摄像机所在的x坐标
+    private float mAngleY = 0;     // 摄像机所在的y坐标
+    private float mAngleZ = 1.5f;  // 摄像机所在的z坐标
 
     /* 手势相关变量 */
     private float startRawX;
@@ -114,89 +112,11 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     /* 球体半径 */
     private float sphereRadius = MAX_SCALE_VALUE;
 
-    /* 使用系统内置的手势识别器，用于处理单指滑动以及双指缩放操作 */
-
-    /* 单指滑动相关 */
-    private GestureDetector mGestureDetector;
-    private static final float sDensity = Resources.getSystem().getDisplayMetrics().density;
-    private static final float sDamping = 0.2f;
-    private float mDeltaX;
-    private float mDeltaY;
-
-    /* 双指缩放相关 */
-    private ScaleGestureDetector mScaleGestureDetector;
-    private float mScale;
-
     private WindowManager mWindowManager;
     private String curUri;                      //当前要显示的图片在本地的Uri
     private Bitmap bitmap;
 
     private float ratio;
-
-    private void initGestureHandler(){
-        mDeltaX = mDeltaY = 0;
-        mGestureDetector = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener(){
-            @Override
-            public boolean onSingleTapConfirmed(MotionEvent e) {
-                return super.onSingleTapConfirmed(e);
-            }
-
-            @Override
-            public boolean onScroll(MotionEvent e1, MotionEvent e2, float distanceX, float distanceY) {
-                mDeltaX += distanceX / sDensity * sDamping;
-                mDeltaY += distanceY / sDensity * sDamping;
-                return super.onScroll(e1, e2, distanceX, distanceY);
-            }
-
-        });
-
-        mScaleGestureDetector = new ScaleGestureDetector(context, new ScaleGestureDetector.OnScaleGestureListener() {
-            @Override
-            public boolean onScale(ScaleGestureDetector detector) {
-                float scaleFactor = detector.getScaleFactor();
-                updateScale(scaleFactor);
-                return true;
-            }
-
-            @Override
-            public boolean onScaleBegin(ScaleGestureDetector detector) {
-                return true;
-            }
-
-            @Override
-            public void onScaleEnd(ScaleGestureDetector detector) {
-
-            }
-        });
-
-    }
-
-    public void updateScale(float scaleFactor){
-        if(LoggerConfig.ON){
-            Log.d(TAG, "updateScale『raw』: " + scaleFactor);
-        }
-
-        mScale = mScale + (1.0f - scaleFactor);
-        mScale = Math.max(0.122f, Math.min(1.0f,mScale));
-
-        if(LoggerConfig.ON){
-            Log.d(TAG, "updateScale『after』: " + mScale);
-        }
-    }
-
-    /**
-     * 处理手势总方法
-     * @param event
-     * @return
-     */
-    public boolean handleTouchEvent(MotionEvent event){
-        /* 先处理缩放再处理滑动，因为滑动可以理解为缩放的一个特殊情况 */
-        boolean ret = mScaleGestureDetector.onTouchEvent(event);
-        if(!mScaleGestureDetector.isInProgress()){
-            ret = mGestureDetector.onTouchEvent(event);
-        }
-        return ret;
-    }
 
     /**
      * 1.确定绘制的球体的半径(大小)
@@ -211,7 +131,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         bitmap = BitmapFactory.decodeFile(curUri);
 
         programDataInit();
-        initGestureHandler();
+        //initGestureHandler();
     }
 
     @Override
@@ -260,17 +180,12 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         /* 产生纹理对象 */
         glGenTextures(1,mTexNames,0);
-
-//        Bitmap bitmap = BitmapFactory.decodeResource(context.getResources(),
-//                R.drawable.local_test3);
-
         glActiveTexture(GL_TEXTURE0);
         glBindTexture(GL_TEXTURE_2D,mTexNames[0]);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S, GL_REPEAT);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_T,GL_REPEAT);
-
         GLUtils.texImage2D(GL_TEXTURE_2D,0,bitmap,0);
         bitmap.recycle();
 
@@ -283,7 +198,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 0,
                 -1, 1,
                 -ratio, ratio,
-                3f,7);
+                0.78f,7);
 
         if(LoggerConfig.ON){
             Log.d(TAG, "onSurfaceChanged: "
@@ -300,12 +215,15 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     @Override
     public void onDrawFrame(GL10 gl) {
         glClearColor(0f,0f,0f,1f);
-        Log.d(TAG, "onDrawFrame: "
-                + "x : " + mAngleX
-                + " y : " + mAngleY
-                + " z : " + mAngleZ
-                + " sphereRadius : " + sphereRadius
-                + " ratio : " + ratio);
+
+        if(LoggerConfig.ON){
+            Log.d(TAG, "onDrawFrame: "
+                    + "x : " + mAngleX
+                    + " y : " + mAngleY
+                    + " z : " + mAngleZ
+                    + " sphereRadius : " + sphereRadius
+                    + " ratio : " + ratio);
+        }
 
         if(sphereRadius >= MAX_SCALE_VALUE){
             sphereRadius = MAX_SCALE_VALUE;
@@ -315,22 +233,11 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         programDataInit();
 
-        /* 根据单指滑动的距离旋转矩阵 */
-//        Matrix.setIdentityM(mCameraMatrix,0);
-//        Matrix.rotateM(mCameraMatrix,0,mDeltaY,1.0f,0.0f,0.0f);
-//        Matrix.rotateM(mCameraMatrix,0,mDeltaX,0.0f,1.0f,0.0f);
-
         Matrix.frustumM(mProjectionMatrix,
                 0,
                 -1, 1,
                 -ratio, ratio,
                 0.78f,7);
-
-        /* 根据缩放比例调整投影矩阵『无效』,这种只能是局部的 */
-//        float currentDegree = (float) (Math.toDegrees(Math.atan(mScale))*2);
-//        Matrix.perspectiveM(mProjectionMatrix,0,currentDegree,
-//                (float) mWindowManager.getDefaultDisplay().getWidth()/mWindowManager.getDefaultDisplay().getHeight()/2,
-//                1f,500f);
 
         /* 调整摄像机焦点位置，使画面滚动 */
         Matrix.setLookAtM(mCameraMatrix, 0, mAngleX, mAngleY, mAngleZ, 0, 0, 0, 0, 1, 0);
@@ -405,7 +312,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 }
                 break;
 
-            case MotionEvent.ACTION_UP:                 //最后一个手指离开屏幕
+            case MotionEvent.ACTION_UP:                             //最后一个手指离开屏幕
                 xFlingAngle += xFlingAngleTemp;
                 yFlingAngle += yFlingAngleTemp;
                 fingerCount = 0;
@@ -419,13 +326,6 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 ++fingerCount;
                 oldDistance = distance(event);
                 break;
-        }
-
-        if(LoggerConfig.ON){
-//            Log.d(TAG, "handleMotionEvent: "
-//                    + "指点按压数量：" + fingerCount + '\t'
-//                    + "oldDistance: " + oldDistance + '\t'
-//                    + "newDistance: " + newDistance + '\n');
         }
     }
 
@@ -475,7 +375,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         int index = 0;
         int index1 = 0;
-        double d = CAP * Math.PI / 180;//每次递增的弧度
+        double d = CAP * Math.PI / 180;//每次递增的弧度，经纬线的画法
         for (int i = 0; i < 180; i += CAP) {
             double d1 = i * Math.PI / 180;
             for (int j = 0; j < 360; j += CAP) {
@@ -525,12 +425,21 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
             }
         }
+
+        if(verticalsBuffer != null) {
+            verticalsBuffer.clear();
+        }
+        //把内存从Java复制到本地堆，使数据可以被OpenGL读取
         verticalsBuffer = ByteBuffer.allocateDirect(verticals.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()
                 .put(verticals);
         verticalsBuffer.position(0);
 
+
+        if(mUvTexVertexBuffer != null){
+            mUvTexVertexBuffer.clear();
+        }
         mUvTexVertexBuffer = ByteBuffer.allocateDirect(UV_TEX_VERTEX.length * 4)
                 .order(ByteOrder.nativeOrder())
                 .asFloatBuffer()

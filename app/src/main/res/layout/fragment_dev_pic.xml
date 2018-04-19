@@ -19,7 +19,7 @@
         app:backgroundTint="#607D8B"
         android:layout_alignParentRight="true"
         android:layout_alignParentBottom="true"
-        android:layout_marginRight="8dp"
+        android:layout_marginRight="16dp"
         android:layout_marginBottom="16dp"
         android:layout_gravity="bottom|right"
         android:layout_width="wrap_content"

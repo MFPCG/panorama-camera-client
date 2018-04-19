@@ -1,6 +1,5 @@
 package pers.liufushihai.panocamclient.activity;
 
-import android.support.annotation.NonNull;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -8,13 +7,10 @@ import android.support.v4.app.FragmentPagerAdapter;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.View;
-import android.view.ViewGroup;
 
 import pers.liufushihai.panocamclient.R;
 import pers.liufushihai.panocamclient.fragment.BaseFragment;
 import pers.liufushihai.panocamclient.fragment.FragmentFactory;
-import pers.liufushihai.panocamclient.network.TcpClientConnector;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";

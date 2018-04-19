@@ -13,6 +13,9 @@ import java.util.Date;
 import java.util.List;
 
 import pers.liufushihai.panocamclient.bean.ImageBean;
+import pers.liufushihai.panocamclient.constant.Constants;
+
+import static pers.liufushihai.panocamclient.constant.Constants.IMAGE_QUALITY;
 
 /**
  * Date        : 2018/3/27
@@ -43,7 +46,7 @@ public class FileUtils {
      * @param bitmap
      */
     public static void saveBitmapWithTime(Bitmap bitmap){
-        File file = new File(directory,new Date().getTime() + ".jpg");
+        File file = new File(directory,new Date().getTime() + Constants.SUFFIX_FILE_TYPE);
         saveFile(bitmap,file);
     }
 
@@ -53,7 +56,7 @@ public class FileUtils {
      * @param str
      */
     public static void saveBitmapWithString(Bitmap bitmap, String str){
-        File file = new File(directory,str + ".jpg");
+        File file = new File(directory,str + Constants.SUFFIX_FILE_TYPE);
         saveFile(bitmap,file);
     }
 
@@ -65,7 +68,7 @@ public class FileUtils {
         FileOutputStream fos = null;
         try {
             fos = new FileOutputStream(file);
-            bitmap.compress(Bitmap.CompressFormat.JPEG,41,fos);
+            bitmap.compress(Constants.IMAGE_FORMAT_TYPE,IMAGE_QUALITY,fos);
             fos.flush();
 
             Uri uri = Uri.fromFile(file);
@@ -107,7 +110,7 @@ public class FileUtils {
                 resursionFileInFolder(file,images);
             }else{
                 //如果不是文件夹，则是文件
-                if(file.getName().endsWith(".jpg")){
+                if(file.getName().endsWith(Constants.SUFFIX_FILE_TYPE)){
                     //往图片集合中添加图片的路径
                     images.add(new ImageBean(file.getAbsolutePath()));
                 }

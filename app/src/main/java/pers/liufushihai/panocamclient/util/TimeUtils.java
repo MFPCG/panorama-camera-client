@@ -6,6 +6,8 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import pers.liufushihai.panocamclient.constant.Constants;
+
 /**
  * <pre>
  *     author: Blankj
@@ -17,7 +19,7 @@ import java.util.Date;
 
 public class TimeUtils {
     @SuppressLint("SimpleDateFormat")
-    private static final DateFormat DEFAULT_FORMAT = new SimpleDateFormat("yyyy-MM-dd-HH-mm-ss");
+    private static final DateFormat DEFAULT_FORMAT = new SimpleDateFormat(Constants.TIME_FORMAT);
 
 
     /**

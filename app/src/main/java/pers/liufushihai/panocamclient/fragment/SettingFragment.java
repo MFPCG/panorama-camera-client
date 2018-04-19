@@ -40,7 +40,6 @@ public class SettingFragment extends BaseFragment {
     @Override
     protected void loadData() {
         //加载数据
-
         layoutInflater = LayoutInflater.from(mContext);
         dialogView = layoutInflater.inflate(R.layout.dialog_server_info, null);
 
@@ -71,8 +70,6 @@ public class SettingFragment extends BaseFragment {
         llConnSetting.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                //Toast.makeText(mContext,"You click 连接设置",Toast.LENGTH_SHORT).show();
-                //弹出窗口，让用户输入并保存
                 showInputDialog(v);
             }
         });
@@ -96,7 +93,7 @@ public class SettingFragment extends BaseFragment {
                             EditText edtIp = dialogView.findViewById(R.id.server_ip);
                             EditText editPort = dialogView.findViewById(R.id.server_port);
 
-                            int port = 8888;
+                            int port = Integer.valueOf(Constants.DEBUG_PORT);
                             String ip = edtIp.getText().toString();
 
                             /* 端口合法性判断 */
@@ -136,24 +133,6 @@ public class SettingFragment extends BaseFragment {
 //                            DevPicFragment.mTcpClientConnector
 //                                    .createConnect(Constants.DEBUG_IP,
 //                                            Integer.parseInt(Constants.DEBUG_PORT));
-
-                            /* 判断socket连接是否可用并且是否连接上相机端,判断需要一定的时间 */
-//                            if(TcpClientConnector.isConnected == true){
-//                                tvConnStatus.setText(
-//                                        getResources().getText(R.string.conn_status_connected));
-//                            }else{
-//                                tvConnStatus.setText(
-//                                        getResources().getText(R.string.conn_status_disconnect));
-//                            }
-
-                            /* 程序走到此步时，可能Socket尚未创建成功 */
-//                            if(DevPicFragment.mTcpClientConnector.isKeepAlive() == false){
-//                                tvConnStatus.setText(
-//                                        getResources().getText(R.string.conn_status_disconnect));
-//                            }else{
-//                                tvConnStatus.setText(
-//                                        getResources().getText(R.string.conn_status_connected));
-//                            }
                         }
                     })
                     .setNegativeButton(getResources().getText(R.string.btn_text_cancel), new DialogInterface.OnClickListener() {
