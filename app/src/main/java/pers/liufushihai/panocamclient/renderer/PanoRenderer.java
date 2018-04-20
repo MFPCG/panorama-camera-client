@@ -8,6 +8,7 @@ import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.GLUtils;
 import android.opengl.Matrix;
+import android.util.DisplayMetrics;
 import android.util.Log;
 import android.view.GestureDetector;
 import android.view.MotionEvent;
@@ -87,10 +88,10 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private static final float MAX_SCALE_VALUE = 3.0f;
     private static final float MIN_SCALE_VALUE = 1.5f;
 
-    /* 摄像机位置 */
-    private float mAngleX = 0;     // 摄像机所在的x坐标
-    private float mAngleY = 0;     // 摄像机所在的y坐标
-    private float mAngleZ = 1.5f;  // 摄像机所在的z坐标
+    /* 摄像机旋转角度 */
+    private float mAngleX = 0;     // 沿x轴旋转角度
+    private float mAngleY = 0;     // 沿y轴旋转角度
+    private float mAngleZ = 1.5f;  // 沿z轴旋转角度
 
     /* 手势相关变量 */
     private float startRawX;
@@ -116,7 +117,11 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private String curUri;                      //当前要显示的图片在本地的Uri
     private Bitmap bitmap;
 
-    private float ratio;
+    private float ratio;                        //屏幕宽高比比例参数
+
+    private float camZValue = -3f;              //相机Z轴方向值
+    private float CAM_Z_MAX_VALUE  = -2f;       //相机Z轴最大值
+    private float CAM_Z_MIN_VALUE  = -4f;       //相机Z轴最小值
 
     /**
      * 1.确定绘制的球体的半径(大小)
@@ -181,7 +186,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         /* 产生纹理对象 */
         glGenTextures(1,mTexNames,0);
         glActiveTexture(GL_TEXTURE0);
-        glBindTexture(GL_TEXTURE_2D,mTexNames[0]);
+        glBindTexture(GL_TEXTURE_2D,mTexNames[0]);      //画笔绑定纹理
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_MAG_FILTER,GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D,GL_TEXTURE_WRAP_S, GL_REPEAT);
@@ -215,6 +220,13 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     @Override
     public void onDrawFrame(GL10 gl) {
         glClearColor(0f,0f,0f,1f);
+
+        gl.glFrontFace(GL10.GL_CCW);
+
+        gl.glTranslatef(0f,0f,camZValue);       //平移Z轴
+
+        //gl.glEnable(GL10.GL_CULL_FACE);
+        //gl.glCullFace(GL10.GL_BACK);
 
         if(LoggerConfig.ON){
             Log.d(TAG, "onDrawFrame: "
@@ -251,7 +263,7 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
         GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mUvTexVertexBuffer);
         GLES20.glUniformMatrix4fv(mMatrixHandle, 1, false, mMVPMatrix, 0);
         GLES20.glUniform1i(mTexSamplerHandle, 0);
-        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, (180 / CAP) * (360 / CAP) * 6);
+        GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, (180 / CAP) * (360 / CAP) * 6); //绘制
         GLES20.glDisableVertexAttribArray(mPositionHandle);
     }
 
@@ -270,9 +282,21 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                 if(fingerCount >= 2){
                     newDistance = distance(event);
                     if ((newDistance > (oldDistance + SCALE_DISTANCE_VALUE))                  //放大
-                            || (newDistance < (oldDistance - SCALE_DISTANCE_VALUE))) {       //缩小
-                        sphereRadius *= getScaleRatio(newDistance, oldDistance);
-                        oldDistance = newDistance;              //将当前距离值改为上一个距离值
+                            || (newDistance < (oldDistance - SCALE_DISTANCE_VALUE))) {        //缩小
+
+//                        {/* 现在处理方式为更改球体半径，可行，但是花屏现象 */
+//                            sphereRadius *= getScaleRatio(newDistance, oldDistance);
+//                            oldDistance = newDistance;              //将当前距离值改为上一个距离值
+//                        }
+
+                        /* 一种新的方式，是更改摄像机的z轴位置 */
+                        {
+                            setZValue(newDistance,oldDistance);
+                            if(LoggerConfig.ON){
+                                Log.d(TAG, "handleMotionEvent: " + " camZValue : " + camZValue);
+                            }
+                            oldDistance = newDistance;
+                        }
                         PanoViewActivity.glSurfaceView.requestRender();  //请求重新渲染，会调用onDrawframe()
                     }
                 }else{
@@ -338,6 +362,27 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
             Log.d(TAG, "getScaleRatio: " + (newDistance / oldDistance));
         }
         return (newDistance / oldDistance);
+    }
+
+    /**
+     * Z轴变化距离计算
+     * @param newDistance
+     * @param oldDistance
+     */
+    private void setZValue(float newDistance, float oldDistance){
+        DisplayMetrics displayMetrics = context.getResources().getDisplayMetrics();
+
+        float px = displayMetrics.widthPixels;
+        float py = displayMetrics.heightPixels;
+
+        camZValue += (newDistance - oldDistance) * (CAM_Z_MAX_VALUE - CAM_Z_MIN_VALUE) /
+                                Math.sqrt(px * px + py * py);
+
+        if(camZValue > CAM_Z_MAX_VALUE){
+            camZValue = CAM_Z_MAX_VALUE;
+        }else if(camZValue < CAM_Z_MIN_VALUE){
+            camZValue = CAM_Z_MIN_VALUE;
+        }
     }
 
     /**
