@@ -74,9 +74,9 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     private int mTexSamplerHandle;
     private int[] mTexNames;
 
-    private final float[] mProjectionMatrix = new float[16];    //投影变换矩阵
-    private final float[] mCameraMatrix = new float[16];        //视图矩阵,控制观看角度
-    private final float[] mMVPMatrix = new float[16];           //投影变换
+    private final float[] mProjectionMatrix = new float[16];    //4x4矩阵，投影用
+    private final float[] mCameraMatrix = new float[16];        //摄像机位置朝向的参数矩阵
+    private final float[] mMVPMatrix = new float[16];           //最后起作用的总变换矩阵
 
     private int mWidth;
     private int mHeight;
@@ -221,9 +221,8 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
     public void onDrawFrame(GL10 gl) {
         glClearColor(0f,0f,0f,1f);
 
-        gl.glFrontFace(GL10.GL_CCW);
-
-        gl.glTranslatef(0f,0f,camZValue);       //平移Z轴
+//        gl.glFrontFace(GL10.GL_CCW);
+//        gl.glTranslatef(0f,0f,camZValue);       //平移Z轴
 
         //gl.glEnable(GL10.GL_CULL_FACE);
         //gl.glCullFace(GL10.GL_BACK);
@@ -257,10 +256,13 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
 
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT | GLES20.GL_DEPTH_BUFFER_BIT);
         GLES20.glUseProgram(mProgramId);
+        /* 使能顶点位置数据数组*/
         GLES20.glEnableVertexAttribArray(mPositionHandle);
         GLES20.glVertexAttribPointer(mPositionHandle, 3, GLES20.GL_FLOAT, false, 12, verticalsBuffer);
+        /* 使能顶点颜色数据数组 */
         GLES20.glEnableVertexAttribArray(mTexCoordHandle);
         GLES20.glVertexAttribPointer(mTexCoordHandle, 2, GLES20.GL_FLOAT, false, 0, mUvTexVertexBuffer);
+        /*  将最终变换矩阵传入shader程序 */
         GLES20.glUniformMatrix4fv(mMatrixHandle, 1, false, mMVPMatrix, 0);
         GLES20.glUniform1i(mTexSamplerHandle, 0);
         GLES20.glDrawArrays(GLES20.GL_TRIANGLES, 0, (180 / CAP) * (360 / CAP) * 6); //绘制
@@ -284,19 +286,19 @@ public class PanoRenderer implements GLSurfaceView.Renderer{
                     if ((newDistance > (oldDistance + SCALE_DISTANCE_VALUE))                  //放大
                             || (newDistance < (oldDistance - SCALE_DISTANCE_VALUE))) {        //缩小
 
-//                        {/* 现在处理方式为更改球体半径，可行，但是花屏现象 */
-//                            sphereRadius *= getScaleRatio(newDistance, oldDistance);
-//                            oldDistance = newDistance;              //将当前距离值改为上一个距离值
-//                        }
+                        /* 现在处理方式为更改球体半径，可行，但是花屏现象 */
+                            sphereRadius *= getScaleRatio(newDistance, oldDistance);
+                            oldDistance = newDistance;              //将当前距离值改为上一个距离值
+
 
                         /* 一种新的方式，是更改摄像机的z轴位置 */
-                        {
-                            setZValue(newDistance,oldDistance);
-                            if(LoggerConfig.ON){
-                                Log.d(TAG, "handleMotionEvent: " + " camZValue : " + camZValue);
-                            }
-                            oldDistance = newDistance;
-                        }
+//                        {
+//                            setZValue(newDistance,oldDistance);
+//                            if(LoggerConfig.ON){
+//                                Log.d(TAG, "handleMotionEvent: " + " camZValue : " + camZValue);
+//                            }
+//                            oldDistance = newDistance;
+//                        }
                         PanoViewActivity.glSurfaceView.requestRender();  //请求重新渲染，会调用onDrawframe()
                     }
                 }else{

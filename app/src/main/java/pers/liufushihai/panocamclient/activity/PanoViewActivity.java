@@ -52,4 +52,16 @@ public class PanoViewActivity extends AppCompatActivity {
         glSurfaceView.requestRender();
         return true;
     }
+
+    @Override
+    protected void onPause() {
+        super.onPause();
+        glSurfaceView.onPause();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        glSurfaceView.onResume();
+    }
 }
